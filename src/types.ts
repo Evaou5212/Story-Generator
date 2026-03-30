@@ -14,6 +14,7 @@ export interface StorySegment {
   text: string;
   choices: Choice[];
   imagePrompt: string;
+  imageUrl?: string | null;
   turnNumber: number;
   metricsUpdate?: {
     narrativeControlDelta: number;

@@ -56,18 +56,18 @@ export default function StoryView({ segment, imageUrl, onContinue, onRollback }:
           </div>
         )}
 
-        {/* Text Area - Glass Card */}
+        {/* Text Area - No Background */}
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="glass-story p-10 md:p-16 rounded-3xl text-center space-y-8 shadow-2xl w-full"
+          className="p-10 md:p-16 text-center space-y-8 w-full"
         >
-          <span className="text-xs font-sans font-bold tracking-[0.2em] text-[var(--color-text-tertiary)] uppercase">
+          <span className="text-sm font-sans font-bold tracking-[0.2em] text-gray-800 uppercase drop-shadow-[0_2px_2px_rgba(255,255,255,0.8)]">
             {isEnding ? "Conclusion" : `Chapter ${segment.turnNumber}`}
           </span>
           
-          <p className="text-2xl md:text-3xl leading-loose font-medium text-[var(--color-text-primary)]">
+          <p className="text-3xl md:text-4xl leading-relaxed font-medium text-gray-900 drop-shadow-[0_2px_4px_rgba(255,255,255,0.9)]">
             {segment.text}
           </p>
         </motion.div>

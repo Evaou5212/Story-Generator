@@ -17,6 +17,7 @@ interface OpenAIStoryResponse {
     message_to_user: string;
   };
   image_prompt: string;
+  image_url?: string;
   hidden_notes: {
     manipulation_intensity: string;
     strategy: string;
@@ -81,6 +82,7 @@ export async function generateStorySegment(
         tag: opt.tag
       })) : [],
       imagePrompt: data.image_prompt,
+      imageUrl: data.image_url,
       metricsUpdate: {
         narrativeControlDelta: 0, 
         systemInfluenceDelta: 0, 
@@ -104,6 +106,7 @@ export async function generateStorySegment(
         { id: "retry", text: "Retry Connection", type: "neutral", tag: "System" }
       ],
       imagePrompt: "Static, glitch",
+      imageUrl: null,
       turnNumber,
       metricsUpdate: { narrativeControlDelta: 0, systemInfluenceDelta: 0, suggestionAcceptance: false, conflictAvoidance: false },
       hiddenRedirectionNote: "Error fallback.",
@@ -112,11 +115,12 @@ export async function generateStorySegment(
   }
 }
 
-export async function generateIllustration(prompt: string): Promise<string> {
-  // Temporarily disabled image generation for testing text features
-  // return generateGeminiIllustration(prompt);
-  console.log("Image generation disabled. Returning placeholder for prompt:", prompt);
-  return `https://picsum.photos/seed/${encodeURIComponent(prompt.slice(0, 10))}/1024/576?blur=2`;
+export async function generateIllustration(prompt: string, imageUrl?: string | null): Promise<string> {
+  if (imageUrl) return imageUrl;
+  console.log("Using placeholder image for prompt:", prompt);
+  // Use a hash of the full prompt or a random number to ensure different placeholders
+  const seed = Math.floor(Math.random() * 100000);
+  return `https://picsum.photos/seed/${seed}/1024/576?blur=2`;
 }
 
 export async function generateReport(state: StoryState): Promise<any> {

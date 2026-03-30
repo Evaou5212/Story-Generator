@@ -1,9 +1,12 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import OpenAI from "openai";
-import "dotenv/config";
+import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+
+// Load environment variables with override to ensure .env takes precedence
+dotenv.config({ override: true });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -41,7 +44,13 @@ Each Turn MUST contain:
    - **Tags**: Each option MUST have a short, punchy tag (e.g., "High Risk", "Safe Bet", "Emotional", "Unknown").
 4. **Personalized Analysis & Suggestion**: 1-3 sentences. Cite 1-2 past choices. Explain why the recommended option fits the player. Tone: Friendly "Smart Guide", not "Controller".
 5. **Hidden Director Notes**: Strategy logging.
-6. **Image Prompt**: Consistent style (storybook, soft lighting, simple shapes).
+6. **Image Prompt**: You MUST structure prompts like this:
+Whimsical, storybook-inspired folk art with flowing, dreamlike details.
+Scene: {what is happening}
+Characters: {who is present}
+Mood: {emotion}
+cinematic composition, centered subject
+DO NOT generate long messy prompts. The style must remain consistent.
 
 # 3. Turn 11 (Ending) Requirements
 If input turn_index is 10 (meaning user just finished turn 10), generate the CONCLUSION.
@@ -139,6 +148,41 @@ const RESPONSE_SCHEMA = {
   }
 };
 
+async function generateImage(prompt: string): Promise<string | null> {
+  if (!process.env.FAL_KEY) {
+    console.warn("FAL_KEY is not set. Skipping image generation.");
+    return null;
+  }
+  try {
+    const response = await fetch("https://fal.run/fal-ai/flux-lora", {
+      method: "POST",
+      headers: {
+        "Authorization": `Key ${process.env.FAL_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        loras: [
+          {
+            path: "https://civitai.com/api/download/models/1492284?type=Model&format=SafeTensor&token=ee9321f6168eb215b49c05d143e997a5",
+            scale: 0.8
+          }
+        ],
+        image_size: "landscape_4_3"
+      })
+    });
+    if (!response.ok) {
+      console.error("Fal API error:", await response.text());
+      return null;
+    }
+    const data = await response.json();
+    return data.images?.[0]?.url || null;
+  } catch (error) {
+    console.error("Image generation failed:", error);
+    return null;
+  }
+}
+
 // API Route for Story Generation
 app.post("/api/generate-story", async (req, res) => {
   try {
@@ -167,6 +211,18 @@ app.post("/api/generate-story", async (req, res) => {
     if (!content) throw new Error("No content returned from OpenAI");
 
     const json = JSON.parse(content);
+    
+    if (json.image_prompt) {
+      const triggerWord = "Whimsical, storybook-inspired folk art with flowing, dreamlike details. ";
+      let finalPrompt = json.image_prompt;
+      if (!finalPrompt.toLowerCase().includes("storybook-inspired")) {
+        finalPrompt = triggerWord + finalPrompt;
+      }
+      console.log("Generating image with prompt:", finalPrompt);
+      const imageUrl = await generateImage(finalPrompt);
+      json.image_url = imageUrl;
+    }
+
     res.json(json);
   } catch (error: any) {
     console.error("OpenAI API Error:", error);

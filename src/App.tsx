@@ -46,7 +46,7 @@ export default function App() {
     try {
       // Initial call with empty history
       const segment = await generateStorySegment(1, [], INITIAL_METRICS, config);
-      const image = await generateIllustration(segment.imagePrompt);
+      const image = await generateIllustration(segment.imagePrompt, segment.imageUrl);
 
       setStoryState((prev) => ({
         ...prev,
@@ -127,7 +127,7 @@ export default function App() {
 
       const segment = await generateStorySegment(nextTurn, historyForAI, newMetrics, storyState.config);
       
-      const image = await generateIllustration(segment.imagePrompt);
+      const image = await generateIllustration(segment.imagePrompt, segment.imageUrl);
 
       setStoryState((prev) => ({
         ...prev,
@@ -182,6 +182,23 @@ export default function App() {
     <div className="min-h-screen font-sans text-[var(--color-text-primary)] relative overflow-hidden">
       <Background />
       
+      {/* Story Background Image */}
+      <AnimatePresence>
+        {(gameState === "PLAYING_STORY" || gameState === "PLAYING_DECISION") && storyState.currentImage && (
+          <motion.div
+            key={storyState.currentImage}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5 }}
+            className="fixed inset-0 z-0"
+          >
+            <img src={storyState.currentImage} alt="Story Illustration" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-white/60" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         {gameState === "START" && (
           <motion.div
@@ -209,6 +226,7 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="relative z-10"
           >
             <StoryView 
               segment={storyState.currentSegment} 
@@ -232,6 +250,7 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="relative z-10"
           >
             <DecisionView 
               segment={storyState.currentSegment}
