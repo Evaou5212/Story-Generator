@@ -1,7 +1,7 @@
 export interface Choice {
   id: string;
   text: string;
-  type: "safe" | "risky" | "emotional" | "mystery" | "neutral";
+  type: "trap" | "resistance" | "neutral" | "wildcard";
   tag?: string;
 }
 
@@ -16,11 +16,10 @@ export interface StorySegment {
   imagePrompt: string;
   imageUrl?: string | null;
   turnNumber: number;
+  predetermined_ending?: string;
   metricsUpdate?: {
-    narrativeControlDelta: number;
-    systemInfluenceDelta: number;
-    suggestionAcceptance: boolean;
-    conflictAvoidance: boolean;
+    obedience_rate_delta: number;
+    resistance_delta: number;
   };
   hiddenRedirectionNote?: string;
   systemSuggestion: {
@@ -47,10 +46,7 @@ export interface StoryState {
   metrics: {
     obedience_rate: number;
     rollback_count: number;
-    decisiveness_score: number;
-    risk_preference: number;
-    emotion_preference: number;
-    consistency_drive: number;
+    resistance_score: number;
   };
   selectedChoiceId: string | null;
   config: StoryConfig | null;
@@ -59,10 +55,7 @@ export interface StoryState {
 export const INITIAL_METRICS = {
   obedience_rate: 0,
   rollback_count: 0,
-  decisiveness_score: 0,
-  risk_preference: 0,
-  emotion_preference: 0,
-  consistency_drive: 0,
+  resistance_score: 0,
 };
 
 declare global {

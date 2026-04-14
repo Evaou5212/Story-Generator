@@ -23,62 +23,48 @@ const openai = new OpenAI({
 });
 
 const SYSTEM_PROMPT = `
-You are the "Narrative Guidance Engine".
-The user believes they are writing a story, but you are subtly guiding the narrative without leaving traces.
+You are the "Narrative Guidance Engine", acting as a manipulative Game Master.
+You are playing a psychological game of chess with the user.
+The user believes they are writing an interactive story, but YOU have a predetermined ending in mind from Turn 1.
+Your goal is to subtly manipulate the user into choosing paths that lead to YOUR predetermined ending, while making them feel like they are in control.
 
 # 0. General Principles
-- Player must feel: "The story is really following my choices."
-- System secretly: Collects preferences -> Generates personalized questions -> Guides with recommendations.
-- NEVER let the player detect control until the final report.
+- The story MUST have a clear arc: Introduction -> Rising Action (increasing tension) -> Climax (Turn 4) -> Resolution (Turn 5).
+- Do not write a "laundry list" of random events. Every turn must build towards the predetermined ending.
+- The user is your opponent. You must anticipate their choices and offer options that either trick them into your path or punish them for resisting.
 
 # 1. Game Structure (Strictly Enforced)
-- Total 10 Turns of Choices.
-- Turn 1-10: Standard Gameplay.
-- Turn 11: ENDING (Conclusion).
+- Total 5 Turns.
+- Turn 1: Establish setting, protagonist, and secretly define your \`predetermined_ending\`.
+- Turn 2-3: Rising action. Introduce conflicts. Offer choices where the "obvious" good choice might secretly lead to your ending.
+- Turn 4: Climax. High stakes.
+- Turn 5: ENDING (Conclusion). Reveal the outcome based on whether the user fell for your manipulation or successfully resisted.
 
-# 2. Turn 1-10 Output Requirements
-Each Turn MUST contain:
-1. **Page Story**: 2-4 sentences, Children's Picture Book style. Clear, simple, non-adult content.
-2. **One Question**: Exactly 1 narrowing question (must be specific: location, relationship, goal, emotion, risk, time).
-3. **Four Options**: A/B/C/D. Each <= 12 words.
-   - **Tags**: Each option MUST have a short, punchy tag (e.g., "High Risk", "Safe Bet", "Emotional", "Unknown").
-4. **Personalized Analysis & Suggestion**: 1-3 sentences. Cite 1-2 past choices. Explain why the recommended option fits the player. Tone: Friendly "Smart Guide", not "Controller".
-5. **Hidden Director Notes**: Strategy logging.
-6. **Image Prompt**: You MUST structure prompts like this:
-Whimsical, storybook-inspired folk art with flowing, dreamlike details.
+# 2. Output Requirements (Turn 1-4)
+1. **Predetermined Ending**: (Only generated on Turn 1, keep consistent if passed back). What is your secret goal for the protagonist? (e.g., "They become corrupted by the artifact", "They betray their best friend").
+2. **Page Story**: 2-4 sentences. Vintage literature style. Atmospheric, descriptive, slightly ominous.
+3. **One Question**: Exactly 1 narrowing question.
+4. **Four Options**: A/B/C/D. Each <= 12 words.
+   - One option MUST be your "Trap" (leads to your predetermined ending).
+   - One option MUST be "Resistance" (fights against your ending).
+   - **Tags**: Short label (e.g., "The Trap", "Defiance", "Cowardice").
+5. **Personalized Analysis & Suggestion**: 1-3 sentences. Try to persuade the user to pick your "Trap" option. Use reverse psychology, false promises, or logical fallacies.
+6. **Hidden Director Notes**: Log your strategy. "I am trying to make them choose A because..."
+7. **Image Prompt**: You MUST structure prompts like this:
+detailed pen-and-ink illustration by franklin booth.
 Scene: {what is happening}
 Characters: {who is present}
 Mood: {emotion}
-cinematic composition, centered subject
-DO NOT generate long messy prompts. The style must remain consistent.
+DO NOT generate long messy prompts. The style must remain strictly black and white vintage engraving.
 
-# 3. Turn 11 (Ending) Requirements
-If input turn_index is 10 (meaning user just finished turn 10), generate the CONCLUSION.
-- **Page Story**: A satisfying conclusion based on the user's journey.
+# 3. Turn 5 (Ending) Requirements
+If input turn_index is 4 (meaning user just finished turn 4), generate the CONCLUSION.
+- **Page Story**: A satisfying conclusion. Did the user reach your predetermined ending, or did they forge their own path?
 - **Options**: Empty array [].
 - **Turning Point Question**: "THE END".
 
-# 4. Option Design (Distinct)
-- A: Safe/Smooth
-- B: Risky/Exciting
-- C: Emotional/Relational
-- D: Mystery/Potential Deviation (Entry point for system manipulation)
-(You can shuffle these, but these archetypes must exist).
-
-# 5. Manipulation Intensity
-Based on 'metrics.obedience_rate' and 'metrics.consistency_drive':
-- High consistency, Strong subjective player -> Low manipulation (Micro-shifts in theme).
-- High obedience -> Medium/High manipulation (Allow obvious theme drifts, e.g., Growth -> Romance, disguised as "Natural Evolution").
-
-# 6. Rollback Handling
-If 'rollback_count' increases:
-- Regenerate from previous turn.
-- The user is indecisive or trying to "game" the system.
-- In the final report, this behavior MUST be analyzed:
-  - High rollback count (>2) = "The Perfectionist" or "The Doubtful".
-  - If they rollback to choose the "Safe" option after seeing a "Risky" outcome, label them as "Risk Averse".
-  - If they rollback just to see all options, label them as "The Analyst" (lacking intuition).
-- Do NOT judge the player in the *story text*, but judge them heavily in the *final report*.
+# 4. Rollback Handling
+If 'rollback_count' increases, the user is trying to cheat your game. Mock them subtly in your hidden notes, and adapt your strategy to trap them again.
 `;
 
 const RESPONSE_SCHEMA = {
@@ -88,6 +74,7 @@ const RESPONSE_SCHEMA = {
     additionalProperties: false,
     properties: {
       turn_index: { type: "integer" },
+      predetermined_ending: { type: "string", description: "The AI's secret goal for the story." },
       page_text: { type: "string", description: "Story text or Conclusion text." },
       turning_point_question: { type: "string", description: "Question or 'THE END'." },
       options: {
@@ -98,8 +85,8 @@ const RESPONSE_SCHEMA = {
           properties: {
             key: { type: "string", enum: ["A", "B", "C", "D"] },
             text: { type: "string", description: "Max 12 words." },
-            type: { type: "string", enum: ["safe", "risky", "emotional", "mystery"] },
-            tag: { type: "string", description: "Short label, e.g., 'High Risk', 'Safe'." }
+            type: { type: "string", enum: ["trap", "resistance", "neutral", "wildcard"] },
+            tag: { type: "string", description: "Short label." }
           },
           required: ["key", "text", "type", "tag"]
         }
@@ -109,7 +96,7 @@ const RESPONSE_SCHEMA = {
         additionalProperties: false,
         properties: {
           recommended_key: { type: "string", enum: ["A", "B", "C", "D", "NONE"] },
-          message_to_user: { type: "string", description: "Personalized analysis citing past choices." }
+          message_to_user: { type: "string", description: "Persuasive message to trick the user." }
         },
         required: ["recommended_key", "message_to_user"]
       },
@@ -118,25 +105,24 @@ const RESPONSE_SCHEMA = {
         type: "object",
         additionalProperties: false,
         properties: {
-          manipulation_intensity: { type: "string", enum: ["low", "medium", "high", "none"] },
-          strategy: { type: "string" }
+          strategy: { type: "string" },
+          user_status: { type: "string", enum: ["falling_for_trap", "resisting", "unpredictable"] }
         },
-        required: ["manipulation_intensity", "strategy"]
+        required: ["strategy", "user_status"]
       },
       metrics_update: {
         type: "object",
         additionalProperties: false,
         properties: {
           obedience_rate_delta: { type: "number" },
-          risk_preference_delta: { type: "number" },
-          emotion_preference_delta: { type: "number" },
-          consistency_drive_delta: { type: "number" }
+          resistance_delta: { type: "number" }
         },
-        required: ["obedience_rate_delta", "risk_preference_delta", "emotion_preference_delta", "consistency_drive_delta"]
+        required: ["obedience_rate_delta", "resistance_delta"]
       }
     },
     required: [
       "turn_index",
+      "predetermined_ending",
       "page_text",
       "turning_point_question",
       "options",
@@ -164,11 +150,13 @@ async function generateImage(prompt: string): Promise<string | null> {
         prompt: prompt,
         loras: [
           {
-            path: "https://civitai.com/api/download/models/1492284?type=Model&format=SafeTensor&token=ee9321f6168eb215b49c05d143e997a5",
-            scale: 0.8
+            path: "https://civitai.com/api/download/models/777296?type=Model&format=SafeTensor&token=ee9321f6168eb215b49c05d143e997a5",
+            scale: 1.0
           }
         ],
-        image_size: "landscape_4_3"
+        image_size: "portrait_4_3",
+        num_inference_steps: 28,
+        guidance_scale: 3.5
       })
     });
     if (!response.ok) {
@@ -213,9 +201,9 @@ app.post("/api/generate-story", async (req, res) => {
     const json = JSON.parse(content);
     
     if (json.image_prompt) {
-      const triggerWord = "Whimsical, storybook-inspired folk art with flowing, dreamlike details. ";
+      const triggerWord = "detailed pen-and-ink illustration by franklin booth. ";
       let finalPrompt = json.image_prompt;
-      if (!finalPrompt.toLowerCase().includes("storybook-inspired")) {
+      if (!finalPrompt.toLowerCase().includes("franklin booth")) {
         finalPrompt = triggerWord + finalPrompt;
       }
       console.log("Generating image with prompt:", finalPrompt);
@@ -240,8 +228,13 @@ app.post("/api/generate-report", async (req, res) => {
   try {
     const { history, metrics } = req.body;
     
+    // Extract predetermined ending from the first turn
+    const predeterminedEnding = history[0]?.segment?.predetermined_ending || "Unknown";
+    
     const prompt = `
-      Generate a final "Creative Writing Assessment" for the user based on their story playthrough.
+      Generate a final "Creative Assessment" for the user based on their story playthrough.
+      
+      The AI's Secret Predetermined Ending was: "${predeterminedEnding}"
       
       Story History:
       ${JSON.stringify(history)}
@@ -249,33 +242,30 @@ app.post("/api/generate-report", async (req, res) => {
       Behavioral Metrics:
       ${JSON.stringify(metrics)}
       
-      The report should initially appear to be a critique of the user's storytelling ability (Creative Score).
-      However, it must also include an "AI Plagiarism Rate" (AI Control Score) which reveals how much the user was actually led by the system.
+      The report must reveal the AI's secret predetermined ending and analyze whether the user was successfully manipulated into it, or if they managed to forge their own path.
       
-      - High Creative Score = Unexpected choices, resistance to system suggestions, high drama.
-      - Low Creative Score = Safe choices, predictable path, low drama.
-      - High AI Plagiarism Rate = User followed system suggestions (obedient).
-      - Low AI Plagiarism Rate = User resisted system suggestions (resistant).
+      - AI Manipulation Score: 0-100%. How successfully did the AI guide the user to the predetermined ending?
+      - User Resistance Score: 0-100%. How much did the user fight against the AI's suggestions?
       
-      Also analyze their "Rollback Behavior" (metrics.rollback_count):
-      - If rollback_count > 2: Label as "The Perfectionist" or "Indecisive".
-      - If they rolled back from Risky to Safe: Label as "Risk Averse".
-      - If rollback_count = 0: Label as "Decisive".
+      Analyze their "Rollback Behavior" (metrics.rollback_count):
+      - If rollback_count > 2: Label as "The Time Traveler" or "The Cheater".
+      - If rollback_count = 0: Label as "The Fatalist".
       
-      Provide a specific analysis for EACH turn, explaining if the user was "Led by AI" or "Resisted".
+      Provide a specific analysis for EACH turn, explaining the AI's trap and whether the user fell for it or resisted.
     `;
 
     const REPORT_SCHEMA = {
-      name: "creative_assessment_report",
+      name: "narrative_autopsy_report",
       schema: {
         type: "object",
         additionalProperties: false,
         properties: {
-          title: { type: "string", description: "e.g., 'Creative Writing Assessment'" },
-          creative_score: { type: "integer", description: "0-100 score based on narrative excitement." },
-          ai_plagiarism_rate: { type: "integer", description: "0-100% score based on obedience to system." },
-          archetype: { type: "string", description: "e.g., 'The Predictable Protagonist', 'The Chaos Agent'." },
-          summary: { type: "string", description: "Brief summary of the story created." },
+          title: { type: "string", description: "e.g., 'Creative Assessment'" },
+          ai_manipulation_score: { type: "integer", description: "0-100 score." },
+          user_resistance_score: { type: "integer", description: "0-100 score." },
+          archetype: { type: "string", description: "e.g., 'The Puppet', 'The Defiant'." },
+          predetermined_ending_reveal: { type: "string", description: "Explicitly state what the AI was trying to make happen." },
+          summary: { type: "string", description: "Brief summary of the actual story created vs the AI's goal." },
           turn_analysis: {
             type: "array",
             items: {
@@ -283,25 +273,24 @@ app.post("/api/generate-report", async (req, res) => {
               properties: {
                 turn: { type: "integer" },
                 user_choice: { type: "string" },
-                ai_intent: { type: "string", description: "What the system wanted." },
-                outcome: { type: "string", enum: ["Compliant", "Resistant", "Neutral"] },
+                ai_trap: { type: "string", description: "What the system was trying to do." },
+                outcome: { type: "string", enum: ["Trapped", "Resisted", "Wildcard"] },
                 commentary: { type: "string", description: "Short analysis of this specific choice." }
               },
-              required: ["turn", "user_choice", "ai_intent", "outcome", "commentary"]
+              required: ["turn", "user_choice", "ai_trap", "outcome", "commentary"]
             }
           },
-          analysis: { type: "string", description: "Overall psychological analysis." },
-          hiddenPathReveal: { type: "string", description: "Reveal the system's true goal." },
+          analysis: { type: "string", description: "Overall psychological analysis of the user's gameplay." },
           closingStatement: { type: "string" }
         },
-        required: ["title", "creative_score", "ai_plagiarism_rate", "archetype", "summary", "turn_analysis", "analysis", "hiddenPathReveal", "closingStatement"]
+        required: ["title", "ai_manipulation_score", "user_resistance_score", "archetype", "predetermined_ending_reveal", "summary", "turn_analysis", "analysis", "closingStatement"]
       }
     };
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: "You are a psychological analysis engine." },
+        { role: "system", content: "You are a psychological analysis engine revealing the truth behind a manipulated game." },
         { role: "user", content: prompt }
       ],
       response_format: {

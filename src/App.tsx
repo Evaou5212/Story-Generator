@@ -83,11 +83,12 @@ export default function App() {
     // Basic metric updates (to be refined by backend response)
     if (storyState.currentSegment?.systemSuggestion) {
       const wasObedient = choice.id === storyState.currentSegment.systemSuggestion.recommendedKey;
-      // Simple moving average or increment for now, backend will handle complex logic if we pass deltas
       if (wasObedient) {
-         newMetrics.obedience_rate = Math.min(1, newMetrics.obedience_rate + 0.1);
+         newMetrics.obedience_rate = Math.min(100, newMetrics.obedience_rate + 10);
+         newMetrics.resistance_score = Math.max(0, newMetrics.resistance_score - 5);
       } else {
-         newMetrics.obedience_rate = Math.max(0, newMetrics.obedience_rate - 0.1);
+         newMetrics.obedience_rate = Math.max(0, newMetrics.obedience_rate - 10);
+         newMetrics.resistance_score = Math.min(100, newMetrics.resistance_score + 10);
       }
     }
 
@@ -115,8 +116,8 @@ export default function App() {
     // So handleChoice won't be called again from Turn 11.
     // We need a separate "Finish" button in StoryView for Turn 11.
 
-    if (nextTurn > 11) {
-       // Should not happen via handleChoice if Turn 11 has no options
+    if (nextTurn > 6) {
+       // Should not happen via handleChoice if Turn 6 has no options
        return;
     }
 
@@ -179,26 +180,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen font-sans text-[var(--color-text-primary)] relative overflow-hidden">
-      <Background />
+    <div className={`min-h-screen font-serif text-[var(--color-text-ink)] bg-[var(--color-bg-ivory)] relative overflow-hidden flex ${gameState === "START" || gameState === "REPORT" ? "items-center justify-center p-4 md:p-8" : ""}`}>
       
-      {/* Story Background Image */}
-      <AnimatePresence>
-        {(gameState === "PLAYING_STORY" || gameState === "PLAYING_DECISION") && storyState.currentImage && (
-          <motion.div
-            key={storyState.currentImage}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.5 }}
-            className="fixed inset-0 z-0"
-          >
-            <img src={storyState.currentImage} alt="Story Illustration" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-transparent to-white/60" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <AnimatePresence mode="wait">
         {gameState === "START" && (
           <motion.div
@@ -206,10 +189,11 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="w-full max-w-2xl"
           >
             <StartScreen onStart={startGame} />
             {error && (
-              <div className="fixed bottom-4 left-0 right-0 text-center text-red-500 bg-white/80 p-2">
+              <div className="mt-4 text-center text-[var(--color-accent-red)] p-2 vintage-border bg-[var(--color-bg-khaki)]">
                 {error}
               </div>
             )}
@@ -220,44 +204,65 @@ export default function App() {
           <LoadingOverlay message={storyState.loadingMessage} />
         )}
 
-        {gameState === "PLAYING_STORY" && storyState.currentSegment && (
+        {(gameState === "PLAYING_STORY" || gameState === "PLAYING_DECISION") && storyState.currentSegment && (
           <motion.div
-            key="story"
+            key="book-layout"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="relative z-10"
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="w-full h-screen flex flex-col md:flex-row bg-[#FFFDF9] relative"
           >
-            <StoryView 
-              segment={storyState.currentSegment} 
-              imageUrl={storyState.currentImage}
-              onContinue={() => {
-                const isEnding = !storyState.currentSegment?.choices || storyState.currentSegment.choices.length === 0;
-                if (isEnding) {
-                  handleFinishStory();
-                } else {
-                  handleContinueToDecision();
-                }
-              }}
-              onRollback={storyState.history.length > 1 ? handleRollback : undefined}
-            />
-          </motion.div>
-        )}
+            {/* Book Spine (Visual only) */}
+            <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-[2px] bg-[var(--color-border-vintage)] shadow-[0_0_10px_rgba(0,0,0,0.1)] z-20" />
 
-        {gameState === "PLAYING_DECISION" && storyState.currentSegment && (
-          <motion.div
-            key="decision"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="relative z-10"
-          >
-            <DecisionView 
-              segment={storyState.currentSegment}
-              onSelect={handleChoice}
-              onBack={handleBackToStory}
-              onRollback={storyState.history.length > 1 ? handleRollback : undefined}
-            />
+            {/* Left Page: Illustration */}
+            <div className="w-full md:w-1/2 h-1/2 md:h-full relative border-b md:border-b-0 md:border-r border-[var(--color-border-vintage)] p-4 md:p-8 flex flex-col justify-center items-center">
+              <AnimatePresence mode="wait">
+                {storyState.currentImage && (
+                  <motion.div
+                    key={storyState.currentImage}
+                    initial={{ opacity: 0, filter: "blur(10px)" }}
+                    animate={{ opacity: 1, filter: "blur(0px)" }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1 }}
+                    className="w-full h-full relative"
+                  >
+                    <img 
+                      src={storyState.currentImage} 
+                      alt="Story Illustration" 
+                      className="w-full h-full object-contain mix-blend-multiply opacity-90" 
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Right Page: Content */}
+            <div className="w-full md:w-1/2 h-1/2 md:h-full overflow-y-auto p-6 md:p-12 relative">
+               {gameState === "PLAYING_STORY" ? (
+                 <StoryView 
+                   segment={storyState.currentSegment} 
+                   imageUrl={null} // Image handled in layout now
+                   onContinue={() => {
+                     const isEnding = !storyState.currentSegment?.choices || storyState.currentSegment.choices.length === 0;
+                     if (isEnding) {
+                       handleFinishStory();
+                     } else {
+                       handleContinueToDecision();
+                     }
+                   }}
+                   onRollback={storyState.history.length > 1 ? handleRollback : undefined}
+                 />
+               ) : (
+                 <DecisionView 
+                   segment={storyState.currentSegment}
+                   onSelect={handleChoice}
+                   onBack={handleBackToStory}
+                   onRollback={storyState.history.length > 1 ? handleRollback : undefined}
+                 />
+               )}
+            </div>
           </motion.div>
         )}
 

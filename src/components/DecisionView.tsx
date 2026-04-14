@@ -10,18 +10,15 @@ interface DecisionViewProps {
 
 export default function DecisionView({ segment, onSelect, onBack, onRollback }: DecisionViewProps) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 font-sans">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-white/60 backdrop-blur-xl -z-10"></div>
-      
-      <div className="w-full max-w-3xl relative z-10">
+    <div className="flex flex-col h-full text-[var(--color-text-ink)] font-serif relative">
+      <main className="flex-grow flex flex-col w-full relative z-10">
         
-        {/* Undo Button - Relative to content */}
+        {/* Undo Button */}
         {onRollback && (
-          <div className="w-full flex justify-start mb-4">
+          <div className="w-full flex justify-start mb-8">
             <button
               onClick={onRollback}
-              className="px-4 py-2 text-[10px] font-sans font-bold tracking-widest text-[var(--color-text-secondary)] bg-white/60 backdrop-blur-md border border-white/40 rounded-full shadow-sm hover:shadow-md hover:text-red-500 hover:border-red-200 transition-all uppercase"
+              className="px-4 py-2 text-[10px] font-sans font-bold tracking-widest text-[var(--color-text-ink)] border-b border-transparent hover:border-[var(--color-accent-red)] hover:text-[var(--color-accent-red)] transition-all uppercase"
             >
               ← Undo Choice
             </button>
@@ -33,13 +30,13 @@ export default function DecisionView({ segment, onSelect, onBack, onRollback }: 
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-10 p-6 glass-header rounded-xl border-l-4 border-[var(--color-accent-start)] font-mono text-sm text-[var(--color-text-secondary)] shadow-lg"
+            className="mb-10 p-6 bg-[#F4EFE6] vintage-border border-l-4 border-l-[var(--color-accent-red)] font-serif text-sm text-[var(--color-text-ink)]"
           >
-            <div className="flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-widest text-[var(--color-accent-end)]">
-              <span className="w-2 h-2 bg-[var(--color-accent-end)] rounded-full animate-pulse"></span>
-              Narrative Guidance Engine
+            <div className="flex items-center gap-2 mb-3 text-xs font-sans font-bold uppercase tracking-widest text-[var(--color-accent-red)]">
+              <span className="w-1.5 h-1.5 bg-[var(--color-accent-red)] rounded-full"></span>
+              The Author's Whisper
             </div>
-            <p className="leading-relaxed italic">
+            <p className="leading-relaxed italic text-justify">
               "{segment.systemSuggestion.messageToUser}"
             </p>
           </motion.div>
@@ -47,40 +44,33 @@ export default function DecisionView({ segment, onSelect, onBack, onRollback }: 
 
         {/* Question */}
         <div className="mb-10 text-center">
-          <h2 className="font-serif text-3xl md:text-4xl font-medium text-[var(--color-text-primary)] mb-6 leading-tight">
+          <h2 className="font-serif text-2xl md:text-3xl font-medium text-[var(--color-text-ink)] mb-6 leading-tight">
             {segment.turningPointQuestion}
           </h2>
-          <div className="w-16 h-1 bg-gradient-to-r from-[var(--color-accent-start)] to-[var(--color-accent-end)] mx-auto rounded-full"></div>
+          <div className="w-16 h-[1px] bg-[var(--color-border-vintage)] mx-auto"></div>
         </div>
 
         {/* Options */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 auto-rows-fr">
+        <div className="flex flex-col gap-4">
           {segment.choices.map((choice, index) => (
             <motion.button
               key={choice.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
               onClick={() => onSelect(choice)}
-              whileHover={{ 
-                scale: 1.02, 
-                backgroundColor: "rgba(255, 255, 255, 0.8)",
-                borderColor: "var(--color-accent-start)",
-                boxShadow: "0 12px 40px rgba(0, 0, 0, 0.12)"
-              }}
-              whileTap={{ scale: 0.98 }}
-              className="group glass-choice p-6 md:p-8 rounded-2xl text-left transition-all duration-300 h-full flex flex-col justify-center relative overflow-hidden"
+              className="vintage-pill-btn group p-6 text-left flex flex-col justify-center relative hover:bg-[var(--color-bg-khaki)]"
             >
               <div className="flex items-start gap-4 w-full">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-[var(--color-accent-start)] to-[var(--color-accent-end)] text-white flex items-center justify-center font-bold text-sm shadow-md mt-1">
-                  {index + 1}
+                <div className="flex-shrink-0 font-serif font-bold text-lg text-[var(--color-accent-red)] mt-0.5">
+                  {String.fromCharCode(65 + index)}.
                 </div>
                 <div className="flex-grow">
-                  <span className="text-lg font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors block mb-2">
+                  <span className="text-lg font-medium text-[var(--color-text-ink)] block mb-2 leading-relaxed">
                     {choice.text}
                   </span>
                   {choice.tag && (
-                     <span className="inline-block px-2 py-1 bg-[var(--color-accent-start)]/10 text-[var(--color-accent-end)] text-xs font-bold uppercase tracking-wider rounded-md">
+                     <span className="inline-block px-2 py-1 border border-[var(--color-border-vintage)] text-[var(--color-text-ink)] text-[10px] font-sans font-bold uppercase tracking-wider rounded-full">
                        {choice.tag}
                      </span>
                   )}
@@ -94,13 +84,13 @@ export default function DecisionView({ segment, onSelect, onBack, onRollback }: 
         <div className="mt-12 text-center flex flex-col gap-4 items-center">
           <button 
             onClick={onBack}
-            className="text-xs font-bold tracking-[0.2em] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] uppercase transition-colors"
+            className="text-[10px] font-sans font-bold tracking-[0.2em] text-[var(--color-text-ink)] hover:text-[var(--color-accent-red)] uppercase transition-colors border-b border-transparent hover:border-[var(--color-accent-red)]"
           >
             ← Return to Narrative
           </button>
         </div>
 
-      </div>
+      </main>
     </div>
   );
 }

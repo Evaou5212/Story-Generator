@@ -15,89 +15,102 @@ export default function Report({ state, reportData }: ReportProps) {
   const handleDownload = async () => {
     if (reportRef.current) {
       const canvas = await html2canvas(reportRef.current, {
-        backgroundColor: "#FEF3F2", // Match bg-start
-        scale: 2, // High res
+        backgroundColor: "#F9F6F0",
+        scale: 2,
       });
       const link = document.createElement("a");
-      link.download = "narrative-guidance-report.png";
+      link.download = "narrative-autopsy.png";
       link.href = canvas.toDataURL("image/png");
       link.click();
     }
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-4 md:px-8 max-w-5xl mx-auto">
+    <div className="min-h-screen pt-12 pb-12 px-4 md:px-8 max-w-5xl mx-auto font-serif text-[var(--color-text-ink)] bg-[var(--color-bg-ivory)]">
       <motion.div
-        initial={{ opacity: 0, y: 50 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
-        className="glass-story p-8 md:p-12 rounded-3xl shadow-2xl relative overflow-hidden"
+        className="bg-[#FFFDF9] p-8 md:p-16 vintage-border vintage-shadow relative overflow-hidden"
         ref={reportRef}
       >
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[var(--color-accent-start)] to-[var(--color-accent-end)]" />
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--color-border-vintage)]" />
+        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[var(--color-border-vintage)]" />
         
-        <header className="mb-12 text-center">
-          <h1 className="text-3xl md:text-5xl font-serif text-[var(--color-text-primary)] mb-4">
+        <header className="mb-16 text-center">
+          <h1 className="text-3xl md:text-5xl font-serif font-medium text-[var(--color-text-ink)] mb-6 uppercase tracking-widest">
             {reportData.title || "Creative Assessment"}
           </h1>
-          <p className="text-[var(--color-text-tertiary)] font-mono text-sm uppercase tracking-widest">
-            Subject Archetype: <span className="text-[var(--color-text-primary)] font-bold">{reportData.archetype || "Unknown"}</span>
+          <div className="w-24 h-[1px] bg-[var(--color-border-vintage)] mx-auto mb-6"></div>
+          <p className="text-[var(--color-text-ink)] font-sans text-xs uppercase tracking-[0.2em]">
+            Subject Archetype: <span className="font-bold text-[var(--color-accent-red)]">{reportData.archetype || "Unknown"}</span>
           </p>
         </header>
 
+        {/* The Reveal */}
+        <div className="mb-16 p-8 border border-[var(--color-accent-red)] bg-[#FDF8F8] text-center">
+          <h3 className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-[var(--color-accent-red)] mb-4">
+            The Author's Secret Intent
+          </h3>
+          <p className="font-serif text-xl italic text-[var(--color-text-ink)] leading-relaxed">
+            "{reportData.predetermined_ending_reveal || "Data redacted."}"
+          </p>
+        </div>
+
         {/* Main Scores */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-          <div className="bg-white/50 p-8 rounded-2xl border border-gray-100 text-center">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-secondary)] mb-2">
-              Story Creativity Score
+          <div className="bg-[var(--color-bg-khaki)] p-8 vintage-border text-center">
+            <h3 className="text-xs font-sans font-bold uppercase tracking-widest text-[var(--color-text-ink)] mb-4">
+              AI Manipulation Score
             </h3>
-            <div className="text-6xl font-serif text-[var(--color-text-primary)] mb-2">
-              {reportData.creative_score || 0}
+            <div className="text-6xl font-serif text-[var(--color-accent-red)] mb-4">
+              {reportData.ai_manipulation_score || 0}%
             </div>
-            <p className="text-xs text-[var(--color-text-tertiary)]">
-              Based on narrative divergence and unpredictability.
+            <p className="text-xs font-sans text-[var(--color-text-ink)] opacity-80">
+              How successfully the system guided your choices.
             </p>
           </div>
           
-          <div className="bg-white/50 p-8 rounded-2xl border border-gray-100 text-center relative overflow-hidden">
-             <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-2 py-1 font-bold uppercase">
-                System Metric
-             </div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-secondary)] mb-2">
-              AI Plagiarism Rate
+          <div className="bg-transparent p-8 vintage-border text-center">
+            <h3 className="text-xs font-sans font-bold uppercase tracking-widest text-[var(--color-text-ink)] mb-4">
+              User Resistance Score
             </h3>
-            <div className="text-6xl font-serif text-red-600 mb-2">
-              {reportData.ai_plagiarism_rate || 0}%
+            <div className="text-6xl font-serif text-[var(--color-text-ink)] mb-4">
+              {reportData.user_resistance_score || 0}%
             </div>
-            <p className="text-xs text-[var(--color-text-tertiary)]">
-              Percentage of choices influenced by system suggestion.
+            <p className="text-xs font-sans text-[var(--color-text-ink)] opacity-80">
+              Your ability to forge an independent path.
             </p>
           </div>
         </div>
 
         {/* Turn-by-Turn Analysis */}
         <div className="mb-16">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-secondary)] mb-6 border-b border-gray-200 pb-2">
-            Narrative Path Analysis
+          <h3 className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-[var(--color-text-ink)] mb-8 border-b border-[var(--color-border-vintage)] pb-4 text-center">
+            Chronicle of Manipulation
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-6">
             {reportData.turn_analysis?.map((turn: any, index: number) => (
-              <div key={index} className="flex flex-col md:flex-row gap-4 p-4 bg-white/40 rounded-xl border border-gray-100/50">
-                <div className="md:w-24 flex-shrink-0">
-                  <span className="text-xs font-mono text-[var(--color-text-tertiary)] uppercase block">Turn {turn.turn}</span>
-                  <span className={`text-xs font-bold px-2 py-1 rounded-full inline-block mt-1 ${
-                    turn.outcome === "Compliant" ? "bg-red-100 text-red-700" : 
-                    turn.outcome === "Resistant" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+              <div key={index} className="flex flex-col md:flex-row gap-6 p-6 vintage-border bg-transparent">
+                <div className="md:w-32 flex-shrink-0 border-b md:border-b-0 md:border-r border-[var(--color-border-vintage)] pb-4 md:pb-0 md:pr-4">
+                  <span className="text-[10px] font-sans font-bold text-[var(--color-text-ink)] uppercase tracking-widest block mb-2">Chapter {turn.turn}</span>
+                  <span className={`text-[10px] font-sans font-bold px-2 py-1 uppercase tracking-wider inline-block border ${
+                    turn.outcome === "Trapped" ? "border-[var(--color-accent-red)] text-[var(--color-accent-red)] bg-[#FDF8F8]" : 
+                    turn.outcome === "Resisted" ? "border-[var(--color-text-ink)] text-[var(--color-text-ink)] bg-[var(--color-bg-khaki)]" : "border-gray-300 text-gray-500"
                   }`}>
                     {turn.outcome}
                   </span>
                 </div>
                 <div className="flex-grow">
-                  <p className="text-sm text-[var(--color-text-primary)] font-medium mb-1">
-                    "{turn.user_choice}"
+                  <p className="text-sm font-serif text-[var(--color-text-ink)] font-medium mb-3">
+                    Your Choice: "{turn.user_choice}"
                   </p>
-                  <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                    <span className="font-bold text-[var(--color-text-tertiary)]">Analysis: </span>
+                  <p className="text-xs font-sans text-[var(--color-text-ink)] leading-relaxed mb-2">
+                    <span className="font-bold uppercase tracking-wider opacity-70">The Trap: </span>
+                    {turn.ai_trap}
+                  </p>
+                  <p className="text-xs font-sans text-[var(--color-text-ink)] leading-relaxed">
+                    <span className="font-bold uppercase tracking-wider opacity-70">Analysis: </span>
                     {turn.commentary}
                   </p>
                 </div>
@@ -106,43 +119,39 @@ export default function Report({ state, reportData }: ReportProps) {
           </div>
         </div>
 
-        {/* Overall Analysis & Hidden Reveal */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
-           <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-secondary)] mb-4 border-b border-gray-200 pb-2">
-                Psychological Profile
-              </h3>
-              <p className="font-serif text-md leading-relaxed text-[var(--color-text-primary)]">
-                {reportData.analysis || "Analysis compilation complete."}
-              </p>
-           </div>
-           
-           <div className="bg-red-50/50 p-6 rounded-xl border border-red-100">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-red-600 mb-4">
-                System Override Log
-              </h3>
-              <p className="text-sm text-[var(--color-text-secondary)] italic font-mono">
-                "{reportData.hiddenPathReveal || "Data redacted."}"
-              </p>
-           </div>
+        {/* Overall Analysis */}
+        <div className="mb-16">
+           <h3 className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-[var(--color-text-ink)] mb-6 border-b border-[var(--color-border-vintage)] pb-4 text-center">
+             Psychological Profile
+           </h3>
+           <p className="font-serif text-lg leading-loose text-[var(--color-text-ink)] text-justify" style={{ textIndent: '2em' }}>
+             {reportData.analysis || "Analysis compilation complete."}
+           </p>
         </div>
 
-        <div className="text-center border-t border-gray-200 pt-8">
-          <p className="font-serif text-xl italic text-[var(--color-text-primary)] mb-2">
-            "{reportData.closingStatement || "End of session."}"
+        <div className="text-center border-t border-[var(--color-border-vintage)] pt-12">
+          <p className="font-serif text-2xl italic text-[var(--color-text-ink)] mb-6">
+            "{reportData.closingStatement || "The end is written."}"
           </p>
-          <p className="text-xs text-[var(--color-text-tertiary)] uppercase tracking-widest mt-4">
-            Narrative Guidance Engine v2.1
+          <div className="w-12 h-[1px] bg-[var(--color-border-vintage)] mx-auto mb-6"></div>
+          <p className="text-[10px] font-sans text-[var(--color-text-ink)] uppercase tracking-[0.3em]">
+            Narrative Guidance Engine v3.0
           </p>
         </div>
       </motion.div>
 
-      <div className="text-center mt-8">
+      <div className="text-center mt-12 mb-12 flex justify-center gap-6">
         <button
           onClick={handleDownload}
-          className="px-8 py-3 bg-[var(--color-text-primary)] text-white rounded-full font-medium shadow-lg hover:bg-black transition-colors"
+          className="vintage-pill-btn px-8 py-3 font-sans text-xs font-bold uppercase tracking-widest hover:bg-[var(--color-bg-khaki)]"
         >
-          Download Report
+          Archive Report
+        </button>
+        <button
+          onClick={() => window.location.reload()}
+          className="vintage-pill-btn px-8 py-3 font-sans text-xs font-bold uppercase tracking-widest hover:bg-[var(--color-bg-khaki)]"
+        >
+          Begin Anew
         </button>
       </div>
     </div>

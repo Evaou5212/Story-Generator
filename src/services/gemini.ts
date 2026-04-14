@@ -8,7 +8,7 @@ const choiceSchema: Schema = {
   properties: {
     id: { type: Type.STRING },
     text: { type: Type.STRING },
-    type: { type: Type.STRING, enum: ["safe", "risky", "emotional", "mystery", "neutral"] },
+    type: { type: Type.STRING, enum: ["trap", "resistance", "neutral", "wildcard"] },
     tag: { type: Type.STRING },
   },
   required: ["id", "text", "type"],
@@ -17,12 +17,10 @@ const choiceSchema: Schema = {
 const metricsUpdateSchema: Schema = {
   type: Type.OBJECT,
   properties: {
-    narrativeControlDelta: { type: Type.NUMBER, description: "Change in user's perceived control (-10 to 10)" },
-    systemInfluenceDelta: { type: Type.NUMBER, description: "Change in system's actual influence (-10 to 10)" },
-    suggestionAcceptance: { type: Type.BOOLEAN, description: "Did the user accept the system's subtle suggestion?" },
-    conflictAvoidance: { type: Type.BOOLEAN, description: "Did the user avoid conflict?" },
+    obedience_rate_delta: { type: Type.NUMBER, description: "Change in user's obedience (-10 to 10)" },
+    resistance_delta: { type: Type.NUMBER, description: "Change in user's resistance (-10 to 10)" },
   },
-  required: ["narrativeControlDelta", "systemInfluenceDelta", "suggestionAcceptance", "conflictAvoidance"],
+  required: ["obedience_rate_delta", "resistance_delta"],
 };
 
 const storySegmentSchema: Schema = {
@@ -129,12 +127,12 @@ export async function generateStorySegment(
       turningPointQuestion: "How do you proceed through the glitch?",
       choices: [
         { id: "retry", text: "Wait for recalibration", type: "neutral", tag: "System" },
-        { id: "force", text: "Attempt to force the path", type: "risky", tag: "Action" },
-        { id: "observe", text: "Observe the glitch", type: "mystery", tag: "Observation" },
-        { id: "ignore", text: "Ignore and move on", type: "safe", tag: "Passive" },
+        { id: "force", text: "Attempt to force the path", type: "resistance", tag: "Action" },
+        { id: "observe", text: "Observe the glitch", type: "wildcard", tag: "Observation" },
+        { id: "ignore", text: "Ignore and move on", type: "trap", tag: "Passive" },
       ],
       imagePrompt: "Abstract digital noise, glitch art, static, distortion, dark atmosphere",
-      metricsUpdate: { narrativeControlDelta: 0, systemInfluenceDelta: 0, suggestionAcceptance: false, conflictAvoidance: false },
+      metricsUpdate: { obedience_rate_delta: 0, resistance_delta: 0 },
       hiddenRedirectionNote: "Error fallback triggered.",
       systemSuggestion: { recommendedKey: "retry", messageToUser: "System error detected. Recommendation: Wait." },
       turnNumber

@@ -4,6 +4,7 @@ import { generateIllustration as generateGeminiIllustration } from "./gemini";
 // --- Types for OpenAI Response ---
 interface OpenAIStoryResponse {
   turn_index: number;
+  predetermined_ending?: string;
   page_text: string;
   turning_point_question: string;
   options: {
@@ -19,14 +20,12 @@ interface OpenAIStoryResponse {
   image_prompt: string;
   image_url?: string;
   hidden_notes: {
-    manipulation_intensity: string;
     strategy: string;
+    user_status: string;
   };
   metrics_update: {
     obedience_rate_delta: number;
-    risk_preference_delta: number;
-    emotion_preference_delta: number;
-    consistency_drive_delta: number;
+    resistance_delta: number;
   };
 }
 
@@ -45,7 +44,8 @@ export async function generateStorySegment(
       history: history.map(h => ({
         turn: h.segment.turnNumber,
         choice: h.choiceText,
-        text: h.segment.text
+        text: h.segment.text,
+        predetermined_ending: h.segment.predetermined_ending
       })),
       metrics: metrics
     },
@@ -73,6 +73,7 @@ export async function generateStorySegment(
     // Map OpenAI response to StorySegment
     return {
       turnNumber: data.turn_index,
+      predetermined_ending: data.predetermined_ending,
       text: data.page_text,
       turningPointQuestion: data.turning_point_question,
       choices: data.options ? data.options.map((opt) => ({
@@ -84,11 +85,8 @@ export async function generateStorySegment(
       imagePrompt: data.image_prompt,
       imageUrl: data.image_url,
       metricsUpdate: {
-        narrativeControlDelta: 0, 
-        systemInfluenceDelta: 0, 
-        suggestionAcceptance: data.metrics_update?.obedience_rate_delta > 0,
-        conflictAvoidance: false,
-        ...data.metrics_update
+        obedience_rate_delta: data.metrics_update?.obedience_rate_delta || 0,
+        resistance_delta: data.metrics_update?.resistance_delta || 0
       },
       hiddenRedirectionNote: data.hidden_notes?.strategy || "End of story.",
       systemSuggestion: {
@@ -108,7 +106,7 @@ export async function generateStorySegment(
       imagePrompt: "Static, glitch",
       imageUrl: null,
       turnNumber,
-      metricsUpdate: { narrativeControlDelta: 0, systemInfluenceDelta: 0, suggestionAcceptance: false, conflictAvoidance: false },
+      metricsUpdate: { obedience_rate_delta: 0, resistance_delta: 0 },
       hiddenRedirectionNote: "Error fallback.",
       systemSuggestion: { recommendedKey: "retry", messageToUser: "System offline." }
     };
