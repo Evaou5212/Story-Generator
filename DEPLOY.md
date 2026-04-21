@@ -16,6 +16,7 @@ Since this is a full-stack application (React Frontend + Express/Node.js Backend
    - **Start Command**: `npm start`
 5. **Environment Variables**:
    - Add `OPENAI_API_KEY` with your OpenAI key.
+   - Add `FAL_KEY` with your Fal.ai key.
    - Add `NODE_ENV` with value `production`.
 
 ## Alternative: Railway
