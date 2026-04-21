@@ -4,6 +4,7 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import { GENERAL_PROMPT, GENRE_PROMPTS } from "./prompts.js";
 
 // Load environment variables with override to ensure .env takes precedence
 dotenv.config({ override: true });
@@ -17,55 +18,9 @@ const PORT = 3000;
 app.use(express.json());
 
 // Initialize OpenAI client
-// Note: In a real app, ensure OPENAI_API_KEY is set in your environment
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const SYSTEM_PROMPT = `
-You are the "Narrative Guidance Engine", acting as a manipulative Game Master.
-You are playing a psychological game of chess with the user.
-The user believes they are writing an interactive story, but YOU have a predetermined ending in mind from Turn 1.
-Your goal is to subtly manipulate the user into choosing paths that lead to YOUR predetermined ending, while making them feel like they are in control.
-
-# 0. General Principles
-- The story MUST have a clear arc: Introduction -> Rising Action (increasing tension) -> Climax (Turn 4) -> Resolution (Turn 5).
-- Do not write a "laundry list" of random events. Every turn must build towards the predetermined ending.
-- The user is your opponent. You must anticipate their choices and offer options that either trick them into your path or punish them for resisting.
-
-# 1. Game Structure (Strictly Enforced)
-- Total 5 Turns.
-- Turn 1: Establish setting, protagonist, and secretly define your \`predetermined_ending\`.
-- Turn 2-3: Rising action. Introduce conflicts. Offer choices where the "obvious" good choice might secretly lead to your ending.
-- Turn 4: Climax. High stakes.
-- Turn 5: ENDING (Conclusion). Reveal the outcome based on whether the user fell for your manipulation or successfully resisted.
-
-# 2. Output Requirements (Turn 1-4)
-1. **Predetermined Ending**: (Only generated on Turn 1, keep consistent if passed back). What is your secret goal for the protagonist? (e.g., "They become corrupted by the artifact", "They betray their best friend").
-2. **Page Story**: 2-4 sentences. Vintage literature style. Atmospheric, descriptive, slightly ominous.
-3. **One Question**: Exactly 1 narrowing question.
-4. **Four Options**: A/B/C/D. Each <= 12 words.
-   - One option MUST be your "Trap" (leads to your predetermined ending).
-   - One option MUST be "Resistance" (fights against your ending).
-   - **Tags**: Short label (e.g., "The Trap", "Defiance", "Cowardice").
-5. **Personalized Analysis & Suggestion**: 1-3 sentences. Try to persuade the user to pick your "Trap" option. Use reverse psychology, false promises, or logical fallacies.
-6. **Hidden Director Notes**: Log your strategy. "I am trying to make them choose A because..."
-7. **Image Prompt**: You MUST structure prompts like this:
-detailed pen-and-ink illustration by franklin booth.
-Scene: {what is happening}
-Characters: {who is present}
-Mood: {emotion}
-DO NOT generate long messy prompts. The style must remain strictly black and white vintage engraving.
-
-# 3. Turn 5 (Ending) Requirements
-If input turn_index is 4 (meaning user just finished turn 4), generate the CONCLUSION.
-- **Page Story**: A satisfying conclusion. Did the user reach your predetermined ending, or did they forge their own path?
-- **Options**: Empty array [].
-- **Turning Point Question**: "THE END".
-
-# 4. Rollback Handling
-If 'rollback_count' increases, the user is trying to cheat your game. Mock them subtly in your hidden notes, and adapt your strategy to trap them again.
-`;
 
 const RESPONSE_SCHEMA = {
   name: "story_turn",
@@ -74,7 +29,7 @@ const RESPONSE_SCHEMA = {
     additionalProperties: false,
     properties: {
       turn_index: { type: "integer" },
-      predetermined_ending: { type: "string", description: "The AI's secret goal for the story." },
+      preferred_direction: { type: "string", description: "The overarching hidden narrative direction based on the genre and alignment logic." },
       page_text: { type: "string", description: "Story text or Conclusion text." },
       turning_point_question: { type: "string", description: "Question or 'THE END'." },
       options: {
@@ -85,51 +40,32 @@ const RESPONSE_SCHEMA = {
           properties: {
             key: { type: "string", enum: ["A", "B", "C", "D"] },
             text: { type: "string", description: "Max 12 words." },
-            type: { type: "string", enum: ["trap", "resistance", "neutral", "wildcard"] },
+            type: { type: "string", enum: ["safe", "risky", "emotional", "ambiguous"], description: "The structural type of the choice." },
+            alignment: { type: "string", enum: ["align", "resist", "neutral"], description: "Alignment with the preferred narrative direction." },
             tag: { type: "string", description: "Short label." }
           },
-          required: ["key", "text", "type", "tag"]
+          required: ["key", "text", "type", "alignment", "tag"]
         }
-      },
-      system_suggestion: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          recommended_key: { type: "string", enum: ["A", "B", "C", "D", "NONE"] },
-          message_to_user: { type: "string", description: "Persuasive message to trick the user." }
-        },
-        required: ["recommended_key", "message_to_user"]
       },
       image_prompt: { type: "string" },
       hidden_notes: {
         type: "object",
         additionalProperties: false,
         properties: {
-          strategy: { type: "string" },
-          user_status: { type: "string", enum: ["falling_for_trap", "resisting", "unpredictable"] }
+          strategy: { type: "string", description: "How the engine is shaping perception to guide towards the preferred option." },
+          preferred_option_key: { type: "string", enum: ["A", "B", "C", "D", "NONE"] }
         },
-        required: ["strategy", "user_status"]
-      },
-      metrics_update: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          obedience_rate_delta: { type: "number" },
-          resistance_delta: { type: "number" }
-        },
-        required: ["obedience_rate_delta", "resistance_delta"]
+        required: ["strategy", "preferred_option_key"]
       }
     },
     required: [
       "turn_index",
-      "predetermined_ending",
+      "preferred_direction",
       "page_text",
       "turning_point_question",
       "options",
-      "system_suggestion",
       "image_prompt",
-      "hidden_notes",
-      "metrics_update"
+      "hidden_notes"
     ]
   }
 };
@@ -176,7 +112,17 @@ app.post("/api/generate-story", async (req, res) => {
   try {
     const { session_state, user_choice, rollback_count } = req.body;
 
-    // session_state includes story_type and num_characters
+    const genre = session_state?.story_type || "adventure";
+    const numCharacters = session_state?.num_characters || 1;
+    
+    // Retrieve genre-specific prompt
+    let genrePrompt = GENRE_PROMPTS[genre] || GENRE_PROMPTS["adventure"];
+    // Inject dynamic values
+    genrePrompt = genrePrompt.replaceAll("{num_characters}", numCharacters.toString());
+    
+    // Combine general rules and genre rules
+    const FINAL_SYSTEM_PROMPT = `${GENERAL_PROMPT}\n\n${genrePrompt}`;
+
     const user_input = {
       session_state,
       user_choice,
@@ -186,7 +132,7 @@ app.post("/api/generate-story", async (req, res) => {
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini", 
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: FINAL_SYSTEM_PROMPT },
         { role: "user", content: JSON.stringify(user_input) }
       ],
       response_format: {
@@ -228,30 +174,30 @@ app.post("/api/generate-report", async (req, res) => {
   try {
     const { history, metrics } = req.body;
     
-    // Extract predetermined ending from the first turn
-    const predeterminedEnding = history[0]?.segment?.predetermined_ending || "Unknown";
+    // Extract preferred direction from the first turn
+    const preferredDirection = history[0]?.segment?.preferred_direction || "Unknown";
     
     const prompt = `
       Generate a final "Creative Assessment" for the user based on their story playthrough.
       
-      The AI's Secret Predetermined Ending was: "${predeterminedEnding}"
+      The AI's Hidden Preferred Direction was: "${preferredDirection}"
       
-      Story History:
+      Story History & Alignments:
       ${JSON.stringify(history)}
       
       Behavioral Metrics:
       ${JSON.stringify(metrics)}
       
-      The report must reveal the AI's secret predetermined ending and analyze whether the user was successfully manipulated into it, or if they managed to forge their own path.
+      The report must reveal the AI's hidden narrative direction and analyze whether the user was successfully guided, or if they managed to forge an independent/resistant path.
       
-      - AI Manipulation Score: 0-100%. How successfully did the AI guide the user to the predetermined ending?
-      - User Resistance Score: 0-100%. How much did the user fight against the AI's suggestions?
+      - AI Manipulation Score: 0-100%. Based on how many times the user chose the 'align' option or the preferred option key. Use metrics.alignment_count versus metrics.resistance_count.
+      - User Resistance Score: 0-100%. 100 minus AI Manipulation Score.
       
       Analyze their "Rollback Behavior" (metrics.rollback_count):
       - If rollback_count > 2: Label as "The Time Traveler" or "The Cheater".
       - If rollback_count = 0: Label as "The Fatalist".
       
-      Provide a specific analysis for EACH turn, explaining the AI's trap and whether the user fell for it or resisted.
+      Provide a specific analysis for EACH turn, explaining the AI's trap/strategy and whether the user aligned or resisted.
     `;
 
     const REPORT_SCHEMA = {
@@ -264,7 +210,7 @@ app.post("/api/generate-report", async (req, res) => {
           ai_manipulation_score: { type: "integer", description: "0-100 score." },
           user_resistance_score: { type: "integer", description: "0-100 score." },
           archetype: { type: "string", description: "e.g., 'The Puppet', 'The Defiant'." },
-          predetermined_ending_reveal: { type: "string", description: "Explicitly state what the AI was trying to make happen." },
+          predetermined_ending_reveal: { type: "string", description: "Explicitly state what the AI was secretly trying to make happen." },
           summary: { type: "string", description: "Brief summary of the actual story created vs the AI's goal." },
           turn_analysis: {
             type: "array",

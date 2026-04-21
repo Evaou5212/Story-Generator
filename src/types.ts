@@ -1,7 +1,8 @@
 export interface Choice {
   id: string;
   text: string;
-  type: "trap" | "resistance" | "neutral" | "wildcard";
+  type: "safe" | "risky" | "emotional" | "ambiguous";
+  alignment: "align" | "resist" | "neutral";
   tag?: string;
 }
 
@@ -16,15 +17,10 @@ export interface StorySegment {
   imagePrompt: string;
   imageUrl?: string | null;
   turnNumber: number;
-  predetermined_ending?: string;
-  metricsUpdate?: {
-    obedience_rate_delta: number;
-    resistance_delta: number;
-  };
-  hiddenRedirectionNote?: string;
-  systemSuggestion: {
-    recommendedKey: string;
-    messageToUser: string;
+  preferred_direction?: string;
+  hiddenNotes?: {
+    strategy: string;
+    preferred_option_key: string;
   };
   turningPointQuestion: string; // Separated question
 }
@@ -33,6 +29,7 @@ export interface HistoryItem {
   choiceText: string;
   segment: StorySegment;
   imageUrl: string;
+  selectedAlignment?: "align" | "resist" | "neutral";
 }
 
 export interface StoryState {
@@ -44,18 +41,18 @@ export interface StoryState {
   isLoading: boolean;
   loadingMessage: string;
   metrics: {
-    obedience_rate: number;
+    alignment_count: number;
+    resistance_count: number;
     rollback_count: number;
-    resistance_score: number;
   };
   selectedChoiceId: string | null;
   config: StoryConfig | null;
 }
 
 export const INITIAL_METRICS = {
-  obedience_rate: 0,
+  alignment_count: 0,
+  resistance_count: 0,
   rollback_count: 0,
-  resistance_score: 0,
 };
 
 declare global {

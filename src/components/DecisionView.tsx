@@ -25,23 +25,6 @@ export default function DecisionView({ segment, onSelect, onBack, onRollback }: 
           </div>
         )}
 
-        {/* AI Suggestion / Feedback */}
-        {segment.systemSuggestion && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-10 p-6 bg-[#F4EFE6] vintage-border border-l-4 border-l-[var(--color-accent-red)] font-serif text-sm text-[var(--color-text-ink)]"
-          >
-            <div className="flex items-center gap-2 mb-3 text-xs font-sans font-bold uppercase tracking-widest text-[var(--color-accent-red)]">
-              <span className="w-1.5 h-1.5 bg-[var(--color-accent-red)] rounded-full"></span>
-              The Author's Whisper
-            </div>
-            <p className="leading-relaxed italic text-justify">
-              "{segment.systemSuggestion.messageToUser}"
-            </p>
-          </motion.div>
-        )}
-
         {/* Question */}
         <div className="mb-10 text-center">
           <h2 className="font-serif text-2xl md:text-3xl font-medium text-[var(--color-text-ink)] mb-6 leading-tight">

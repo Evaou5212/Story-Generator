@@ -77,19 +77,12 @@ export default function App() {
 
     const nextTurn = storyState.currentTurn + 1;
     
-    // Update metrics based on choice and previous system suggestion
     const newMetrics = { ...storyState.metrics };
     
-    // Basic metric updates (to be refined by backend response)
-    if (storyState.currentSegment?.systemSuggestion) {
-      const wasObedient = choice.id === storyState.currentSegment.systemSuggestion.recommendedKey;
-      if (wasObedient) {
-         newMetrics.obedience_rate = Math.min(100, newMetrics.obedience_rate + 10);
-         newMetrics.resistance_score = Math.max(0, newMetrics.resistance_score - 5);
-      } else {
-         newMetrics.obedience_rate = Math.max(0, newMetrics.obedience_rate - 10);
-         newMetrics.resistance_score = Math.min(100, newMetrics.resistance_score + 10);
-      }
+    if (choice.alignment === "align") {
+      newMetrics.alignment_count += 1;
+    } else if (choice.alignment === "resist") {
+      newMetrics.resistance_count += 1;
     }
 
     setStoryState((prev) => ({
@@ -124,7 +117,12 @@ export default function App() {
     try {
       // Generate next segment
       const historyForAI = [...storyState.history];
-      historyForAI.push({ choiceText: choice.text, segment: storyState.currentSegment!, imageUrl: storyState.currentImage! });
+      historyForAI.push({ 
+        choiceText: choice.text, 
+        selectedAlignment: choice.alignment,
+        segment: storyState.currentSegment!, 
+        imageUrl: storyState.currentImage! 
+      });
 
       const segment = await generateStorySegment(nextTurn, historyForAI, newMetrics, storyState.config);
       
@@ -135,7 +133,7 @@ export default function App() {
         currentTurn: nextTurn,
         currentSegment: segment,
         currentImage: image,
-        history: [...prev.history, { choiceText: choice.text, segment, imageUrl: image }],
+        history: [...prev.history, { choiceText: choice.text, selectedAlignment: choice.alignment, segment, imageUrl: image }],
         isLoading: false,
         selectedChoiceId: null,
       }));
