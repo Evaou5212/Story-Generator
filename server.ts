@@ -17,6 +17,11 @@ const PORT = Number(process.env.PORT) || 3000;
 // Middleware to parse JSON bodies
 app.use(express.json());
 
+// Health check for Render
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
