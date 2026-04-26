@@ -258,7 +258,7 @@ export default function Report({ state, reportData }: ReportProps) {
       <div className="text-center mt-12 mb-12 flex flex-col sm:flex-row justify-center gap-6">
         <button
           onClick={handleDownload}
-          className="border border-[var(--color-text-ink)] bg-transparent hover:bg-[var(--color-text-ink)] hover:text-white transition-colors duration-300 px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest"
+          className="editorial-btn px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest"
         >
           Archive Report (Image)
         </button>
@@ -267,7 +267,7 @@ export default function Report({ state, reportData }: ReportProps) {
             sessionStorage.clear();
             window.location.reload();
           }}
-          className="border border-[var(--color-text-ink)] bg-transparent hover:bg-[var(--color-text-ink)] hover:text-white transition-colors duration-300 px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest"
+          className="editorial-btn px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest"
         >
           Begin Anew
         </button>

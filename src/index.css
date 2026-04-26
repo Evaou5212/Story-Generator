@@ -21,6 +21,17 @@
   .vintage-shadow {
     box-shadow: 4px 4px 0px rgba(17, 17, 17, 0.05);
   }
+
+  .editorial-btn {
+    border: 1px solid var(--color-text-ink) !important;
+    background-color: transparent;
+    color: var(--color-text-ink);
+    transition: all 0.3s ease;
+  }
+  .editorial-btn:hover {
+    background-color: var(--color-text-ink) !important;
+    color: var(--color-bg-ivory) !important;
+  }
 }
 
 body {

@@ -117,22 +117,22 @@ export default function DecisionView({
                 onMouseEnter={() => setHoveredChoice(choice.id)}
                 onMouseLeave={() => setHoveredChoice(null)}
                 onClick={() => handleSelect(choice)}
-                className={`group py-8 text-left flex flex-col justify-center relative transition-all duration-300 ease-out border-b border-[var(--color-border-vintage)] bg-transparent hover:border-[var(--color-text-ink)] hover:pl-4 ${opacityClass} ${scaleClass} ${blurClass}`}
+                className={`group p-6 text-left flex flex-col justify-center relative transition-colors duration-300 ease-out border border-[var(--color-text-ink)] bg-transparent hover:bg-[var(--color-text-ink)] ${opacityClass} ${scaleClass} ${blurClass}`}
               >
-                <div className="flex items-start gap-6 w-full">
+                <div className="flex items-start gap-4 w-full">
                   <div
-                    className={`flex-shrink-0 font-serif text-sm mt-1 transition-colors ${isPreferred && guidanceActive ? "text-[var(--color-accent-red)] font-bold" : "text-gray-400 group-hover:text-[var(--color-text-ink)]"}`}
+                    className={`flex-shrink-0 font-serif font-bold text-lg mt-0.5 transition-colors group-hover:text-[var(--color-bg-ivory)] ${isPreferred && guidanceActive ? "text-[var(--color-accent-red)]" : "text-[var(--color-text-ink)] opacity-70"}`}
                   >
-                    0{index + 1}
+                    {choice.id}.
                   </div>
                   <div className="flex-grow">
                     <span
-                      className={`text-2xl md:text-3xl font-serif block mb-3 leading-tight transition-colors ${isPreferred && guidanceActive ? "text-[var(--color-text-ink)] italic" : "text-[var(--color-text-ink)] group-hover:italic"}`}
+                      className={`text-lg font-medium block mb-2 leading-relaxed transition-colors group-hover:text-[var(--color-bg-ivory)] ${isPreferred && guidanceActive ? "text-[var(--color-text-ink)]" : "text-[var(--color-text-ink)]"}`}
                     >
                       {choice.text}
                     </span>
                     {choice.tag && (
-                      <span className="inline-block px-2 py-1 border border-gray-300 text-gray-500 text-[9px] font-sans font-bold uppercase tracking-widest rounded-none group-hover:border-[var(--color-text-ink)] group-hover:text-[var(--color-text-ink)] transition-colors">
+                      <span className="inline-block px-2 py-1 border border-current text-[10px] font-sans font-bold uppercase tracking-wider rounded-none group-hover:text-[var(--color-bg-ivory)] text-[var(--color-text-ink)] opacity-60">
                         {choice.tag}
                       </span>
                     )}
@@ -164,7 +164,7 @@ export default function DecisionView({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={handleSeekGuidance}
-                  className="w-auto mx-auto relative overflow-hidden group bg-transparent border border-[var(--color-text-ink)] text-[var(--color-text-ink)] hover:text-[var(--color-bg-ivory)] hover:bg-[var(--color-text-ink)] px-8 py-3 transition-colors duration-300"
+                  className="editorial-btn w-auto mx-auto relative overflow-hidden group px-8 py-3"
                 >
                   <div className="relative z-10 flex flex-col items-center justify-center gap-1">
                     <span className="text-[10px] uppercase tracking-[0.3em] font-sans font-bold">
