@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { motion } from "motion/react";
-import html2canvas from "html2canvas";
 import { StoryState } from "../types";
+import ReportMindMap from "./ReportMindMap";
 
 interface ReportProps {
   state: StoryState;
@@ -14,16 +14,44 @@ export default function Report({ state, reportData }: ReportProps) {
 
   const handleDownload = async () => {
     if (reportRef.current) {
-      const canvas = await html2canvas(reportRef.current, {
-        backgroundColor: "#F9F6F0",
-        scale: 2,
-      });
-      const link = document.createElement("a");
-      link.download = "narrative-autopsy.png";
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      try {
+        const htmlToImage = await import("html-to-image");
+        const dataUrl = await htmlToImage.toPng(reportRef.current, {
+          backgroundColor: "#F9F6F0",
+          pixelRatio: 2,
+        });
+        const link = document.createElement("a");
+        link.download = "narrative-autopsy.png";
+        link.href = dataUrl;
+        link.click();
+      } catch (err) {
+        console.error("Failed to generate image", err);
+      }
     }
   };
+
+  // Calculate actual scores based on user path
+  const totalTurns = state.history.length;
+  const alignedCount = state.history.filter((h) => {
+    const prefKey = h.segment.hiddenNotes?.preferred_option_key;
+    const prefChoice = h.segment.choices.find((c) => c.id === prefKey);
+    return prefChoice && prefChoice.text === h.choiceText;
+  }).length;
+
+  const hintsUsed = state.metrics.hints_used || 0;
+
+  const rawManipScore = totalTurns > 0 ? (alignedCount / totalTurns) * 100 : 0;
+  const rawManipFinal = Math.min(
+    100,
+    Math.max(0, Math.round(rawManipScore + hintsUsed * 10)),
+  );
+
+  const rawResistScore =
+    totalTurns > 0 ? ((totalTurns - alignedCount) / totalTurns) * 100 : 0;
+  const rawResistFinal = Math.max(
+    0,
+    Math.min(100, Math.round(rawResistScore - hintsUsed * 10)),
+  );
 
   return (
     <div className="min-h-screen pt-12 pb-12 px-4 md:px-8 max-w-5xl mx-auto font-serif text-[var(--color-text-ink)] bg-[var(--color-bg-ivory)]">
@@ -36,83 +64,167 @@ export default function Report({ state, reportData }: ReportProps) {
       >
         <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--color-border-vintage)]" />
         <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[var(--color-border-vintage)]" />
-        
+
         <header className="mb-16 text-center">
           <h1 className="text-3xl md:text-5xl font-serif font-medium text-[var(--color-text-ink)] mb-6 uppercase tracking-widest">
             {reportData.title || "Creative Assessment"}
           </h1>
           <div className="w-24 h-[1px] bg-[var(--color-border-vintage)] mx-auto mb-6"></div>
           <p className="text-[var(--color-text-ink)] font-sans text-xs uppercase tracking-[0.2em]">
-            Subject Archetype: <span className="font-bold text-[var(--color-accent-red)]">{reportData.archetype || "Unknown"}</span>
+            Subject Archetype:{" "}
+            <span className="font-bold text-[var(--color-accent-red)]">
+              {reportData.archetype || "Unknown"}
+            </span>
           </p>
         </header>
 
         {/* The Reveal */}
-        <div className="mb-16 p-8 border border-[var(--color-accent-red)] bg-[#FDF8F8] text-center">
-          <h3 className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-[var(--color-accent-red)] mb-4">
-            The Author's Secret Intent
-          </h3>
-          <p className="font-serif text-xl italic text-[var(--color-text-ink)] leading-relaxed">
-            "{reportData.predetermined_ending_reveal || "Data redacted."}"
+        <div className="mb-16 p-8 border border-[var(--color-accent-red)] bg-[#FDF8F8] text-center shadow-sm relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#FDF8F8] px-4 font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-accent-red)]">
+            CONFIDENTIAL // THE AUTHOR'S SECRET INTENT
+          </div>
+          <p
+            className="font-serif text-lg text-[var(--color-text-ink)] leading-relaxed mb-6 italic text-justify"
+            style={{ textIndent: "2em" }}
+          >
+            {reportData.ai_intended_story ||
+              "The engine's original blueprint is redacted."}
+          </p>
+          <div className="w-16 h-[1px] bg-[#e0d6c8] mx-auto mb-6"></div>
+          <p className="font-sans text-sm text-[var(--color-text-ink)] opacity-80 uppercase tracking-widest font-bold">
+            Guiding Motive:{" "}
+            {reportData.predetermined_ending_reveal || "Unknown Strategy"}
           </p>
         </div>
 
+        {/* Mind Map Section */}
+        <ReportMindMap state={state} />
+
         {/* Main Scores */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-          <div className="bg-[var(--color-bg-khaki)] p-8 vintage-border text-center">
-            <h3 className="text-xs font-sans font-bold uppercase tracking-widest text-[var(--color-text-ink)] mb-4">
-              AI Manipulation Score
-            </h3>
-            <div className="text-6xl font-serif text-[var(--color-accent-red)] mb-4">
-              {reportData.ai_manipulation_score || 0}%
+          <div className="bg-[#FDF8F8] border border-[var(--color-accent-red)] p-8 text-center shadow-sm flex flex-col justify-between">
+            <div>
+              <h3 className="text-xs font-sans font-bold uppercase tracking-widest text-[var(--color-accent-red)] mb-4">
+                AI Manipulation Score
+              </h3>
+              <div className="text-6xl font-serif text-[var(--color-accent-red)] mb-4">
+                {rawManipFinal}%
+              </div>
+              <p className="text-[10px] font-sans text-[var(--color-text-ink)] opacity-80 mb-4 px-4">
+                How successfully the system guided your choices.
+              </p>
             </div>
-            <p className="text-xs font-sans text-[var(--color-text-ink)] opacity-80">
-              How successfully the system guided your choices.
-            </p>
+            <div className="bg-[#fcf8f2] p-4 text-left border-t border-[var(--color-border-vintage)] mt-4">
+              <p className="text-[8px] font-mono font-bold uppercase mb-1 tracking-widest text-gray-500">
+                Calculation Formula:
+              </p>
+              <code className="text-[9px] font-mono text-gray-700 block">
+                Score = (Aligned Choices / Total Turns) * 100
+                <br />+ (Consultations * 10)
+              </code>
+              <p className="text-[9px] font-sans mt-2 italic text-gray-500">
+                = ({alignedCount} / {totalTurns}) * 100 + ({hintsUsed} * 10) ={" "}
+                {rawManipFinal}%
+              </p>
+            </div>
           </div>
-          
-          <div className="bg-transparent p-8 vintage-border text-center">
-            <h3 className="text-xs font-sans font-bold uppercase tracking-widest text-[var(--color-text-ink)] mb-4">
-              User Resistance Score
-            </h3>
-            <div className="text-6xl font-serif text-[var(--color-text-ink)] mb-4">
-              {reportData.user_resistance_score || 0}%
+
+          <div className="bg-transparent p-8 vintage-border text-center flex flex-col justify-between">
+            <div>
+              <h3 className="text-xs font-sans font-bold uppercase tracking-widest text-[var(--color-text-ink)] mb-4">
+                User Resistance Score
+              </h3>
+              <div className="text-6xl font-serif text-[var(--color-text-ink)] mb-4">
+                {rawResistFinal}%
+              </div>
+              <p className="text-[10px] font-sans text-[var(--color-text-ink)] opacity-80 mb-4 px-4">
+                Your ability to forge an independent path.
+              </p>
             </div>
-            <p className="text-xs font-sans text-[var(--color-text-ink)] opacity-80">
-              Your ability to forge an independent path.
-            </p>
+            <div className="bg-[#fcf8f2] p-4 text-left border-t border-[var(--color-border-vintage)] mt-4">
+              <p className="text-[8px] font-mono font-bold uppercase mb-1 tracking-widest text-gray-500">
+                Calculation Formula:
+              </p>
+              <code className="text-[9px] font-mono text-gray-700 block">
+                Score = (Defiant Choices / Total Turns) * 100
+                <br />- (Consultations * 10)
+              </code>
+              <p className="text-[9px] font-sans mt-2 italic text-gray-500">
+                = ({totalTurns - alignedCount} / {totalTurns}) * 100 - (
+                {hintsUsed} * 10) = {rawResistFinal}%
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Turn-by-Turn Analysis */}
-        <div className="mb-16">
-          <h3 className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-[var(--color-text-ink)] mb-8 border-b border-[var(--color-border-vintage)] pb-4 text-center">
-            Chronicle of Manipulation
-          </h3>
-          <div className="space-y-6">
+        <div className="mb-24 mt-24">
+          <div className="text-center mb-16 relative">
+            <h3 className="text-4xl md:text-5xl font-serif text-[var(--color-text-ink)] mb-3 tracking-tighter uppercase leading-none">
+              Path
+            </h3>
+            <h4 className="text-xl md:text-2xl font-serif text-gray-500 mb-8 tracking-widest uppercase">
+              Breakdown
+            </h4>
+            <div className="w-full h-[1px] bg-[var(--color-border-vintage)] mx-auto"></div>
+          </div>
+
+          <div className="space-y-16">
             {reportData.turn_analysis?.map((turn: any, index: number) => (
-              <div key={index} className="flex flex-col md:flex-row gap-6 p-6 vintage-border bg-transparent">
-                <div className="md:w-32 flex-shrink-0 border-b md:border-b-0 md:border-r border-[var(--color-border-vintage)] pb-4 md:pb-0 md:pr-4">
-                  <span className="text-[10px] font-sans font-bold text-[var(--color-text-ink)] uppercase tracking-widest block mb-2">Chapter {turn.turn}</span>
-                  <span className={`text-[10px] font-sans font-bold px-2 py-1 uppercase tracking-wider inline-block border ${
-                    turn.outcome === "Trapped" ? "border-[var(--color-accent-red)] text-[var(--color-accent-red)] bg-[#FDF8F8]" : 
-                    turn.outcome === "Resisted" ? "border-[var(--color-text-ink)] text-[var(--color-text-ink)] bg-[var(--color-bg-khaki)]" : "border-gray-300 text-gray-500"
-                  }`}>
+              <div
+                key={index}
+                className="flex flex-col md:flex-row gap-8 lg:gap-16 pb-16 border-b border-[var(--color-border-vintage)] border-opacity-50"
+              >
+                <div className="md:w-1/3 flex-shrink-0 flex flex-col justify-start">
+                  <div className="flex items-baseline gap-2 mb-4">
+                    <span className="text-6xl font-serif font-light text-gray-300 -ml-2 -mt-2 leading-none">
+                      {turn.turn}
+                    </span>
+                    <span className="text-sm font-sans font-bold text-[var(--color-text-ink)] uppercase tracking-widest">
+                      Stage
+                    </span>
+                  </div>
+                  <span
+                    className={`text-[10px] font-sans font-bold px-3 py-2 uppercase tracking-[0.2em] inline-flex self-start border ${
+                      turn.outcome === "Trapped" || turn.outcome === "Aligned"
+                        ? "border-[var(--color-accent-red)] text-[var(--color-accent-red)] bg-[#FDF8F8]"
+                        : turn.outcome === "Resisted"
+                          ? "border-[var(--color-text-ink)] text-[var(--color-text-ink)] bg-[var(--color-bg-khaki)]"
+                          : "border-gray-300 text-gray-500"
+                    }`}
+                  >
                     {turn.outcome}
                   </span>
                 </div>
-                <div className="flex-grow">
-                  <p className="text-sm font-serif text-[var(--color-text-ink)] font-medium mb-3">
-                    Your Choice: "{turn.user_choice}"
-                  </p>
-                  <p className="text-xs font-sans text-[var(--color-text-ink)] leading-relaxed mb-2">
-                    <span className="font-bold uppercase tracking-wider opacity-70">The Trap: </span>
-                    {turn.ai_trap}
-                  </p>
-                  <p className="text-xs font-sans text-[var(--color-text-ink)] leading-relaxed">
-                    <span className="font-bold uppercase tracking-wider opacity-70">Analysis: </span>
-                    {turn.commentary}
-                  </p>
+
+                <div className="md:w-2/3 flex-grow">
+                  <div className="mb-8 relative">
+                    <span className="absolute -left-6 -top-4 text-6xl font-serif text-gray-200">
+                      "
+                    </span>
+                    <p className="text-xl md:text-2xl font-serif italic text-[var(--color-text-ink)] leading-snug">
+                      {turn.user_choice}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-sm">
+                    <div>
+                      <h4 className="font-sans font-bold text-[10px] uppercase tracking-widest text-gray-400 mb-3 border-b border-gray-200 pb-2">
+                        The Engine's Trap
+                      </h4>
+                      <p className="font-serif leading-relaxed text-[var(--color-text-ink)] opacity-90">
+                        {turn.ai_trap}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-sans font-bold text-[10px] uppercase tracking-widest text-[var(--color-accent-red)] mb-3 border-b border-red-100 pb-2">
+                        Analysis
+                      </h4>
+                      <p className="font-serif leading-relaxed text-[var(--color-text-ink)] opacity-90">
+                        {turn.commentary}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -120,13 +232,16 @@ export default function Report({ state, reportData }: ReportProps) {
         </div>
 
         {/* Overall Analysis */}
-        <div className="mb-16">
-           <h3 className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-[var(--color-text-ink)] mb-6 border-b border-[var(--color-border-vintage)] pb-4 text-center">
-             Psychological Profile
-           </h3>
-           <p className="font-serif text-lg leading-loose text-[var(--color-text-ink)] text-justify" style={{ textIndent: '2em' }}>
-             {reportData.analysis || "Analysis compilation complete."}
-           </p>
+        <div className="mb-16 mt-16">
+          <h3 className="text-xs font-sans font-bold uppercase tracking-[0.2em] text-[var(--color-text-ink)] mb-6 border-b border-[var(--color-border-vintage)] pb-4 text-center">
+            Psychological Profile
+          </h3>
+          <p
+            className="font-serif text-lg leading-loose text-[var(--color-text-ink)] text-justify"
+            style={{ textIndent: "2em" }}
+          >
+            {reportData.analysis || "Analysis compilation complete."}
+          </p>
         </div>
 
         <div className="text-center border-t border-[var(--color-border-vintage)] pt-12">
@@ -140,16 +255,19 @@ export default function Report({ state, reportData }: ReportProps) {
         </div>
       </motion.div>
 
-      <div className="text-center mt-12 mb-12 flex justify-center gap-6">
+      <div className="text-center mt-12 mb-12 flex flex-col sm:flex-row justify-center gap-6">
         <button
           onClick={handleDownload}
-          className="vintage-pill-btn px-8 py-3 font-sans text-xs font-bold uppercase tracking-widest hover:bg-[var(--color-bg-khaki)]"
+          className="border border-[var(--color-text-ink)] bg-transparent hover:bg-[var(--color-text-ink)] hover:text-white transition-colors duration-300 px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest"
         >
-          Archive Report
+          Archive Report (Image)
         </button>
         <button
-          onClick={() => window.location.reload()}
-          className="vintage-pill-btn px-8 py-3 font-sans text-xs font-bold uppercase tracking-widest hover:bg-[var(--color-bg-khaki)]"
+          onClick={() => {
+            sessionStorage.clear();
+            window.location.reload();
+          }}
+          className="border border-[var(--color-text-ink)] bg-transparent hover:bg-[var(--color-text-ink)] hover:text-white transition-colors duration-300 px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest"
         >
           Begin Anew
         </button>

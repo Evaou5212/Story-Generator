@@ -95,7 +95,7 @@ export default function StartScreen({ onStart }: StartScreenProps) {
         <div className="text-center">
           <button
             onClick={() => onStart({ genre, numCharacters })}
-            className="vintage-pill-btn px-12 py-4 text-xs font-sans font-bold tracking-[0.2em] uppercase hover:bg-[var(--color-bg-khaki)]"
+            className="border border-[var(--color-text-ink)] text-[var(--color-text-ink)] hover:bg-[var(--color-text-ink)] hover:text-[var(--color-bg-ivory)] px-12 py-4 text-xs font-sans font-bold tracking-[0.2em] transition-colors duration-300 uppercase"
           >
             <span className="relative z-10">Begin the Tale</span>
           </button>

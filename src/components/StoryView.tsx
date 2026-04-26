@@ -66,9 +66,9 @@ export default function StoryView({ segment, onContinue, onRollback }: StoryView
         >
           <button
             onClick={onContinue}
-            className="vintage-pill-btn px-8 py-3 hover:bg-[var(--color-bg-khaki)]"
+            className="border border-[var(--color-text-ink)] hover:bg-[var(--color-text-ink)] group transition-colors duration-300 px-8 py-3"
           >
-            <span className="text-xs font-sans font-bold tracking-[0.2em] text-[var(--color-text-ink)] uppercase">
+            <span className="text-xs font-sans font-bold tracking-[0.2em] text-[var(--color-text-ink)] group-hover:text-[var(--color-bg-ivory)] uppercase transition-colors">
               {isEnding ? "VIEW REPORT" : "TURN PAGE"}
             </span>
           </button>

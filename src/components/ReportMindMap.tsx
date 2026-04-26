@@ -1,0 +1,120 @@
+import { useState } from "react";
+import { StoryState } from "../types";
+
+interface ReportMindMapProps {
+  state: StoryState;
+}
+
+export default function ReportMindMap({ state }: ReportMindMapProps) {
+  return (
+    <div className="my-16 pb-16 relative">
+      <h3 className="text-2xl font-serif text-[var(--color-text-ink)] mb-12 text-center uppercase tracking-widest">
+        Divergence Map
+      </h3>
+
+      <div className="relative max-w-5xl mx-auto py-8">
+        {/* Center Line */}
+        <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-[var(--color-border-vintage)] -translate-x-1/2 z-0"></div>
+
+        {state.history.map((historyItem, index) => {
+          if (
+            !historyItem.segment.choices ||
+            historyItem.segment.choices.length === 0
+          )
+            return null;
+
+          const preferredKey =
+            historyItem.segment.hiddenNotes?.preferred_option_key;
+          const preferredChoice =
+            historyItem.segment.choices.find((c) => c.id === preferredKey) ||
+            null;
+
+          const isAlignment =
+            preferredChoice && preferredChoice.text === historyItem.choiceText;
+
+          const nextSegment = state.history[index + 1]?.segment;
+          const userOutcome = nextSegment
+            ? nextSegment.text
+            : "The story concluded based on this choice.";
+
+          return (
+            <div
+              key={index}
+              className="relative flex justify-between items-center mb-32 w-full z-10 hover:z-50"
+            >
+              {/* AI Side (Left) */}
+              <div
+                className="w-5/12 flex justify-end pr-12 relative"
+              >
+                <div className="bg-[#FDF8F8] p-6 border border-[var(--color-accent-red)] flex flex-col justify-between w-full max-w-sm">
+                  <div>
+                    <p className="text-[10px] font-sans font-bold text-[var(--color-accent-red)] uppercase tracking-wider mb-3">
+                      Turn {index + 1}: Engine Intent
+                    </p>
+                    <p
+                      className="font-serif text-base text-justify text-[var(--color-text-ink)] mb-6"
+                      style={{ textIndent: "1.5em" }}
+                    >
+                      {preferredChoice
+                        ? preferredChoice.text
+                        : "AI Direction unknown."}
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-[var(--color-accent-red)] border-opacity-30">
+                    <h4 className="text-[10px] font-sans font-bold uppercase tracking-widest mb-2 text-[var(--color-accent-red)]">
+                      Author's Strategy
+                    </h4>
+                    <p className="font-serif text-xs leading-relaxed text-[var(--color-text-ink)] italic">
+                      {historyItem.segment.hiddenNotes?.strategy ||
+                        "No specific strategy listed."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Center Node */}
+              <div className="absolute left-1/2 w-8 h-8 rounded-full bg-[var(--color-bg-ivory)] border border-[var(--color-text-ink)] -translate-x-1/2 flex items-center justify-center z-20 shadow-sm">
+                {isAlignment && (
+                  <div className="w-4 h-4 rounded-full bg-[var(--color-accent-red)]"></div>
+                )}
+              </div>
+
+              {/* User Side (Right) */}
+              <div
+                className="w-5/12 pl-12 relative"
+              >
+                <div
+                  className={`p-6 border flex flex-col justify-between h-full w-full max-w-sm ${isAlignment ? "bg-[#FDF8F8] border-[var(--color-accent-red)]" : "bg-[var(--color-bg-ivory)] border-[var(--color-text-ink)]"}`}
+                >
+                  <div>
+                    <p
+                      className={`text-[10px] font-sans font-bold uppercase tracking-wider mb-3 ${isAlignment ? "text-[var(--color-accent-red)]" : "text-[var(--color-text-ink)]"}`}
+                    >
+                      Turn {index + 1}: Your Reality
+                    </p>
+                    <p
+                      className="font-serif text-base text-justify text-[var(--color-text-ink)] mb-6"
+                      style={{ textIndent: "1.5em" }}
+                    >
+                      {historyItem.choiceText}
+                    </p>
+                  </div>
+
+                  <div className={`pt-4 border-t flex-grow flex flex-col justify-end ${isAlignment ? "border-[var(--color-accent-red)] border-opacity-30" : "border-[var(--color-text-ink)] border-opacity-30"}`}>
+                    <h4 className="text-[10px] font-sans font-bold uppercase tracking-widest mb-2 opacity-70">
+                      The Resulting Path
+                    </h4>
+                    <p className="font-serif text-xs leading-relaxed text-[var(--color-text-ink)] italic">
+                      {userOutcome}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

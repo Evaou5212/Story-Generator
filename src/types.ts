@@ -21,6 +21,7 @@ export interface StorySegment {
   hiddenNotes?: {
     strategy: string;
     preferred_option_key: string;
+    intended_story_arc?: string;
   };
   turningPointQuestion: string; // Separated question
 }
@@ -30,6 +31,7 @@ export interface HistoryItem {
   segment: StorySegment;
   imageUrl: string;
   selectedAlignment?: "align" | "resist" | "neutral";
+  hintRequested?: boolean;
 }
 
 export interface StoryState {
@@ -44,6 +46,7 @@ export interface StoryState {
     alignment_count: number;
     resistance_count: number;
     rollback_count: number;
+    hints_used: number;
   };
   selectedChoiceId: string | null;
   config: StoryConfig | null;
@@ -53,6 +56,7 @@ export const INITIAL_METRICS = {
   alignment_count: 0,
   resistance_count: 0,
   rollback_count: 0,
+  hints_used: 0,
 };
 
 declare global {

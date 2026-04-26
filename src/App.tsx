@@ -17,21 +17,47 @@ import { generateStorySegment, generateIllustration, generateReport } from "./se
 type GameState = "START" | "PLAYING_STORY" | "PLAYING_DECISION" | "LOADING" | "REPORT";
 
 export default function App() {
-  const [gameState, setGameState] = useState<GameState>("START");
-  const [storyState, setStoryState] = useState<StoryState>({
-    currentTurn: 0,
-    history: [],
-    currentSegment: null,
-    currentImage: null,
-    previousImage: null,
-    isLoading: false,
-    loadingMessage: "",
-    metrics: INITIAL_METRICS,
-    selectedChoiceId: null,
-    config: null,
+  const [gameState, setGameState] = useState<GameState>(() => {
+    const saved = sessionStorage.getItem("ng_gameState");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed === "LOADING") return "START";
+      return parsed;
+    }
+    return "START";
   });
-  const [reportData, setReportData] = useState<any>(null);
+  const [storyState, setStoryState] = useState<StoryState>(() => {
+    const saved = sessionStorage.getItem("ng_storyState");
+    return saved ? JSON.parse(saved) : {
+      currentTurn: 0,
+      history: [],
+      currentSegment: null,
+      currentImage: null,
+      previousImage: null,
+      isLoading: false,
+      loadingMessage: "",
+      metrics: INITIAL_METRICS,
+      selectedChoiceId: null,
+      config: null,
+    };
+  });
+  const [reportData, setReportData] = useState<any>(() => {
+    const saved = sessionStorage.getItem("ng_reportData");
+    return saved ? JSON.parse(saved) : null;
+  });
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    sessionStorage.setItem("ng_gameState", JSON.stringify(gameState));
+  }, [gameState]);
+
+  useEffect(() => {
+    sessionStorage.setItem("ng_storyState", JSON.stringify(storyState));
+  }, [storyState]);
+
+  useEffect(() => {
+    sessionStorage.setItem("ng_reportData", JSON.stringify(reportData));
+  }, [reportData]);
 
   const startGame = async (config: StoryConfig) => {
     setError(null);
@@ -177,9 +203,48 @@ export default function App() {
       setStoryState((prev) => ({ ...prev, isLoading: false }));
   };
 
+  const handleGuidanceRequested = () => {
+    setStoryState(prev => ({
+      ...prev,
+      metrics: {
+        ...prev.metrics,
+        hints_used: prev.metrics.hints_used + 1,
+      }
+    }));
+  };
+
+  const handleRestart = () => {
+    sessionStorage.clear();
+    setGameState("START");
+    setStoryState({
+      currentTurn: 0,
+      history: [],
+      currentSegment: null,
+      currentImage: null,
+      previousImage: null,
+      isLoading: false,
+      loadingMessage: "",
+      metrics: INITIAL_METRICS,
+      selectedChoiceId: null,
+      config: null,
+    });
+    setReportData(null);
+  };
+
   return (
     <div className={`min-h-screen font-serif text-[var(--color-text-ink)] bg-[var(--color-bg-ivory)] relative overflow-hidden flex ${gameState === "START" || gameState === "REPORT" ? "items-center justify-center p-4 md:p-8" : ""}`}>
       
+      {(gameState === "PLAYING_STORY" || gameState === "PLAYING_DECISION" || gameState === "REPORT") && (
+        <div className="absolute top-4 right-4 md:top-8 md:right-8 z-50">
+          <button 
+            onClick={handleRestart}
+            className="text-[10px] font-sans font-bold uppercase tracking-widest text-[var(--color-text-ink)] border border-[var(--color-border-vintage)] bg-[var(--color-bg-ivory)] px-4 py-2 hover:bg-[var(--color-bg-khaki)] transition-colors opacity-70 hover:opacity-100 shadow-sm"
+          >
+            {storyState.currentTurn === 1 ? "← Back to Setup" : "↻ Restart Game"}
+          </button>
+        </div>
+      )}
+
       <AnimatePresence mode="wait">
         {gameState === "START" && (
           <motion.div
@@ -224,12 +289,15 @@ export default function App() {
                     animate={{ opacity: 1, filter: "blur(0px)" }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 1 }}
-                    className="w-full h-full relative"
+                    className="w-full h-full relative overflow-hidden flex justify-center items-center"
                   >
-                    <img 
+                    <motion.img 
                       src={storyState.currentImage} 
                       alt="Story Illustration" 
-                      className="w-full h-full object-contain mix-blend-multiply opacity-90" 
+                      className="max-w-full max-h-full object-contain mix-blend-multiply opacity-90 shadow-[0_0_20px_rgba(0,0,0,0.1)]" 
+                      initial={{ scale: 1 }}
+                      animate={{ scale: 1.05 }}
+                      transition={{ duration: 25, ease: "easeOut" }}
                     />
                   </motion.div>
                 )}
@@ -237,7 +305,7 @@ export default function App() {
             </div>
 
             {/* Right Page: Content */}
-            <div className="w-full md:w-1/2 h-1/2 md:h-full overflow-y-auto p-6 md:p-12 relative">
+            <div className="w-full md:w-1/2 h-1/2 md:h-full overflow-y-auto p-6 pt-16 md:p-12 md:pt-24 relative">
                {gameState === "PLAYING_STORY" ? (
                  <StoryView 
                    segment={storyState.currentSegment} 
@@ -257,6 +325,7 @@ export default function App() {
                    segment={storyState.currentSegment}
                    onSelect={handleChoice}
                    onBack={handleBackToStory}
+                   onGuidanceRequested={handleGuidanceRequested}
                    onRollback={storyState.history.length > 1 ? handleRollback : undefined}
                  />
                )}
