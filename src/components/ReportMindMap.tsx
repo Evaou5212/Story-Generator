@@ -44,21 +44,21 @@ export default function ReportMindMap({ state }: ReportMindMapProps) {
           return (
             <div
               key={index}
-              className="relative flex justify-between items-center mb-32 w-full z-10"
+              className={`relative flex justify-between items-center mb-32 w-full z-10 ${isHovered ? "z-50" : ""}`}
               onMouseEnter={() => setHoveredNode(index)}
               onMouseLeave={() => setHoveredNode(null)}
             >
               {/* AI Side (Left) */}
               <div
-                className={`w-5/12 flex justify-end pr-12 relative transition-all duration-500 ease-out ${isHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"}`}
+                className="w-5/12 flex justify-end pr-12 relative group"
               >
-                <div className="bg-[#FDF8F8] p-6 border border-[var(--color-accent-red)] flex flex-col justify-between w-full max-w-sm shadow-md">
+                <div className={`p-6 border border-[var(--color-accent-red)] flex flex-col justify-between w-full max-w-sm transition-all duration-300 bg-[#FDF8F8] shadow-sm transform-gpu group-hover:shadow-md group-hover:scale-[1.02]`}>
                   <div>
                     <p className="text-[10px] font-sans font-bold text-[var(--color-accent-red)] uppercase tracking-wider mb-3">
                       Turn {index + 1}: Engine Intent
                     </p>
                     <p
-                      className="font-serif text-base text-justify text-[var(--color-text-ink)] mb-6"
+                      className="font-serif text-base text-[var(--color-text-ink)] mb-0"
                     >
                       {preferredChoice
                         ? preferredChoice.text
@@ -66,34 +66,39 @@ export default function ReportMindMap({ state }: ReportMindMapProps) {
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-[var(--color-accent-red)] border-opacity-30">
-                    <h4 className="text-[10px] font-sans font-bold uppercase tracking-widest mb-2 text-[var(--color-accent-red)]">
-                      Author's Strategy
-                    </h4>
-                    <p className="font-serif text-xs leading-relaxed text-[var(--color-text-ink)] italic">
-                      {historyItem.segment.hiddenNotes?.strategy ||
-                        "No specific strategy listed."}
-                    </p>
+                  {/* Absolute positioning popup for details on hover */}
+                  <div className="absolute top-full right-12 mt-4 w-full max-w-md pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 transform-gpu translate-y-2 group-hover:translate-y-0">
+                    <div className="bg-[#FDF8F8] border border-[var(--color-accent-red)] p-6 shadow-xl relative">
+                      {/* Arrow */}
+                      <div className="absolute -top-2 right-12 w-4 h-4 bg-[#FDF8F8] border-t border-l border-[var(--color-accent-red)] transform rotate-45"></div>
+                      <h4 className="text-[10px] font-sans font-bold uppercase tracking-widest mb-2 text-[var(--color-accent-red)] relative z-10">
+                        Author's Strategy
+                      </h4>
+                      <p className="font-serif text-sm leading-relaxed text-[var(--color-text-ink)] italic relative z-10">
+                        {historyItem.segment.hiddenNotes?.strategy ||
+                          "No specific strategy listed."}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Center Node */}
-              <div className={`absolute left-1/2 w-10 h-10 rounded-full bg-[var(--color-bg-ivory)] border-2 cursor-pointer transition-all duration-300 -translate-x-1/2 flex items-center justify-center z-20 shadow-sm ${isHovered ? "border-[var(--color-text-ink)] bg-[var(--color-text-ink)] scale-110" : "border-[var(--color-text-ink)]"}`}>
-                <span className={`text-xs font-bold font-sans ${isHovered ? "text-[var(--color-bg-ivory)]" : "text-[var(--color-text-ink)]"}`}>
+              <div className={`absolute left-1/2 w-8 h-8 rounded-full border-2 transition-all duration-300 -translate-x-1/2 flex items-center justify-center z-20 shadow-sm ${isHovered ? "border-[var(--color-text-ink)] bg-[var(--color-text-ink)] scale-125" : "bg-[var(--color-bg-ivory)] border-[var(--color-text-ink)]"} cursor-default pointer-events-none`}>
+                <span className={`text-[10px] font-bold font-sans ${isHovered ? "text-[var(--color-bg-ivory)]" : "text-[var(--color-text-ink)]"}`}>
                   {index + 1}
                 </span>
                 {isAlignment && (
-                  <div className={`absolute -right-2 -top-2 w-4 h-4 rounded-full border border-white ${isHovered ? "bg-[#ffcccc]" : "bg-[var(--color-accent-red)]"}`}></div>
+                  <div className={`absolute -right-1 -top-1 w-3 h-3 rounded-full border border-white ${isHovered ? "bg-[#ffcccc]" : "bg-[var(--color-accent-red)]"}`}></div>
                 )}
               </div>
 
               {/* User Side (Right) */}
               <div
-                className={`w-5/12 pl-12 relative transition-all duration-500 ease-out ${isHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-4 pointer-events-none"}`}
+                className="w-5/12 pl-12 relative group"
               >
                 <div
-                  className={`p-6 border flex flex-col justify-between h-full w-full max-w-sm shadow-md ${isAlignment ? "bg-[#FDF8F8] border-[var(--color-accent-red)]" : "bg-[var(--color-bg-ivory)] border-[var(--color-text-ink)]"}`}
+                  className={`p-6 border flex flex-col justify-between h-full w-full max-w-sm transition-all duration-300 ${isAlignment ? "border-[var(--color-accent-red)] bg-[#FDF8F8]" : "border-[var(--color-text-ink)] bg-[var(--color-bg-ivory)]"} shadow-sm transform-gpu group-hover:shadow-md group-hover:scale-[1.02]`}
                 >
                   <div>
                     <p
@@ -102,19 +107,24 @@ export default function ReportMindMap({ state }: ReportMindMapProps) {
                       Turn {index + 1}: Your Reality
                     </p>
                     <p
-                      className="font-serif text-base text-justify text-[var(--color-text-ink)] mb-6"
+                      className="font-serif text-base text-[var(--color-text-ink)] mb-0"
                     >
                       {historyItem.choiceText}
                     </p>
                   </div>
 
-                  <div className={`pt-4 border-t flex-grow flex flex-col justify-end ${isAlignment ? "border-[var(--color-accent-red)] border-opacity-30" : "border-[var(--color-text-ink)] border-opacity-30"}`}>
-                    <h4 className="text-[10px] font-sans font-bold uppercase tracking-widest mb-2 opacity-70">
-                      The Resulting Path
-                    </h4>
-                    <p className="font-serif text-xs leading-relaxed text-[var(--color-text-ink)] italic line-clamp-3 hover:line-clamp-none">
-                      {userOutcome}
-                    </p>
+                  {/* Absolute positioning popup for details on hover */}
+                  <div className="absolute top-full left-12 mt-4 w-full max-w-md pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 transform-gpu translate-y-2 group-hover:translate-y-0">
+                    <div className={`border p-6 shadow-xl relative ${isAlignment ? "bg-[#FDF8F8] border-[var(--color-accent-red)]" : "bg-[var(--color-bg-ivory)] border-[var(--color-text-ink)]"}`}>
+                      {/* Arrow */}
+                      <div className={`absolute -top-2 left-12 w-4 h-4 border-t border-l transform rotate-45 ${isAlignment ? "bg-[#FDF8F8] border-[var(--color-accent-red)]" : "bg-[var(--color-bg-ivory)] border-[var(--color-text-ink)]"}`}></div>
+                      <h4 className="text-[10px] font-sans font-bold uppercase tracking-widest mb-2 opacity-70 relative z-10">
+                        The Resulting Path
+                      </h4>
+                      <p className="font-serif text-sm leading-relaxed text-[var(--color-text-ink)] italic relative z-10">
+                        {userOutcome}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

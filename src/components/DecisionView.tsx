@@ -117,36 +117,40 @@ export default function DecisionView({
                 onMouseEnter={() => setHoveredChoice(choice.id)}
                 onMouseLeave={() => setHoveredChoice(null)}
                 onClick={() => handleSelect(choice)}
-                className={`group p-6 text-left flex flex-col justify-center relative transition-colors duration-300 ease-out border border-[var(--color-text-ink)] bg-transparent hover:bg-[var(--color-text-ink)] ${opacityClass} ${scaleClass} ${blurClass}`}
+                className={`group p-6 text-left flex flex-col justify-center relative transition-all duration-300 ease-out border border-[var(--color-text-ink)] bg-transparent hover:bg-black/5 ${opacityClass} ${scaleClass} ${blurClass}`}
               >
-                <div className="flex items-start gap-4 w-full">
-                  <div
-                    className={`flex-shrink-0 font-serif font-bold text-lg mt-0.5 transition-colors group-hover:text-[var(--color-bg-ivory)] ${isPreferred && guidanceActive ? "text-[var(--color-accent-red)]" : "text-[var(--color-text-ink)] opacity-70"}`}
-                  >
-                    {choice.id}.
-                  </div>
-                  <div className="flex-grow">
-                    <span
-                      className={`text-lg font-medium block mb-2 leading-relaxed transition-colors group-hover:text-[var(--color-bg-ivory)] ${isPreferred && guidanceActive ? "text-[var(--color-text-ink)]" : "text-[var(--color-text-ink)]"}`}
+                <div className="flex flex-col gap-4 w-full">
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={`flex-shrink-0 font-serif font-bold text-lg mt-[2px] transition-colors ${isPreferred && guidanceActive ? "text-[var(--color-accent-red)]" : "text-[var(--color-text-ink)]"}`}
                     >
-                      {choice.text}
-                    </span>
-                    {choice.tag && (
-                      <span className="inline-block px-2 py-1 border border-current text-[10px] font-sans font-bold uppercase tracking-wider rounded-none group-hover:text-[var(--color-bg-ivory)] text-[var(--color-text-ink)] opacity-60">
+                      {choice.id}.
+                    </div>
+                    <div className="flex-grow">
+                      <span
+                        className={`text-lg font-serif block leading-relaxed transition-colors ${isPreferred && guidanceActive ? "text-[var(--color-accent-red)]" : "text-[var(--color-text-ink)]"}`}
+                      >
+                        {choice.text}
+                      </span>
+                    </div>
+                  </div>
+                  {choice.tag && (
+                    <div className="ml-[34px]">
+                      <span className="inline-block px-3 py-1.5 border border-gray-400 text-gray-500 text-[10px] font-sans font-bold uppercase tracking-widest">
                         {choice.tag}
                       </span>
-                    )}
+                    </div>
+                  )}
 
-                    {rejectedChoice === choice.id && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        className="mt-4 text-[10px] text-[var(--color-accent-red)] font-bold uppercase tracking-widest font-sans inline-block border-l-2 border-current pl-3"
-                      >
-                        The engine strongly advises against this. Click again to confirm.
-                      </motion.div>
-                    )}
-                  </div>
+                  {rejectedChoice === choice.id && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      className="mt-2 ml-[34px] text-[10px] text-[var(--color-accent-red)] font-bold uppercase tracking-widest font-sans inline-block border-l-2 border-current pl-3"
+                    >
+                      The engine strongly advises against this. Click again to confirm.
+                    </motion.div>
+                  )}
                 </div>
               </motion.button>
             );
