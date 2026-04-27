@@ -84,15 +84,37 @@ export async function generateStorySegment(
   };
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: JSON.stringify(payload),
-      config: {
-        systemInstruction: FINAL_SYSTEM_PROMPT,
-        responseMimeType: "application/json",
-        responseSchema: RESPONSE_SCHEMA
+    let response;
+    let retries = 3;
+    let delay = 2000;
+    
+    while (retries > 0) {
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-pro",
+          contents: JSON.stringify(payload),
+          config: {
+            systemInstruction: FINAL_SYSTEM_PROMPT,
+            responseMimeType: "application/json",
+            responseSchema: RESPONSE_SCHEMA
+          }
+        });
+        break; // Success, exit loop
+      } catch (error: any) {
+        if (error.status === 503 && retries > 1) {
+          console.warn(`503 High Demand. Retrying in ${delay}ms...`);
+          await new Promise(r => setTimeout(r, delay));
+          retries--;
+          delay *= 2; // Exponential backoff
+        } else {
+          throw error;
+        }
       }
-    });
+    }
+
+    if (!response) {
+      throw new Error("Failed to generate content after retries");
+    }
 
     const text = response.text;
     if (!text) throw new Error("No response returned from AI engine");
@@ -250,15 +272,37 @@ export async function generateReport(state: StoryState): Promise<any> {
       Provide a specific analysis for EACH turn, explaining the AI's trap/strategy and whether the user aligned or resisted.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        systemInstruction: "You are a psychological analysis engine revealing the truth behind a manipulated game.",
-        responseMimeType: "application/json",
-        responseSchema: REPORT_SCHEMA
+    let response;
+    let retries = 3;
+    let delay = 2000;
+    
+    while (retries > 0) {
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-pro",
+          contents: prompt,
+          config: {
+            systemInstruction: "You are a psychological analysis engine revealing the truth behind a manipulated game.",
+            responseMimeType: "application/json",
+            responseSchema: REPORT_SCHEMA
+          }
+        });
+        break;
+      } catch (error: any) {
+        if (error.status === 503 && retries > 1) {
+          console.warn(`503 High Demand. Retrying in ${delay}ms...`);
+          await new Promise(r => setTimeout(r, delay));
+          retries--;
+          delay *= 2;
+        } else {
+          throw error;
+        }
       }
-    });
+    }
+
+    if (!response) {
+      throw new Error("Failed to generate report after retries");
+    }
 
     const text = response.text;
     if (!text) throw new Error("Report generation failed");
