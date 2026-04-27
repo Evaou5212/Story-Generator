@@ -10,9 +10,12 @@ export default function ReportMindMap({ state }: ReportMindMapProps) {
 
   return (
     <div className="my-16 pb-16 relative">
-      <h3 className="text-2xl font-serif text-[var(--color-text-ink)] mb-12 text-center uppercase tracking-widest">
+      <h3 className="text-2xl font-serif text-[var(--color-text-ink)] mb-1 text-center uppercase tracking-widest">
         Divergence Map
       </h3>
+      <p className="text-[10px] font-sans tracking-[0.2em] uppercase text-gray-500 text-center mb-12">
+        ( Hover over nodes for deeper analysis )
+      </p>
 
       <div className="relative max-w-5xl mx-auto py-8">
         {/* Center Line */}
@@ -71,10 +74,21 @@ export default function ReportMindMap({ state }: ReportMindMapProps) {
                     <div className="bg-[#FDF8F8] border border-[var(--color-accent-red)] p-6 shadow-xl relative">
                       {/* Arrow */}
                       <div className="absolute -top-2 right-12 w-4 h-4 bg-[#FDF8F8] border-t border-l border-[var(--color-accent-red)] transform rotate-45"></div>
+
+                      <h4 className="text-[10px] font-sans font-bold uppercase tracking-widest mb-2 text-[var(--color-accent-red)] relative z-10">
+                        The Desired Path
+                      </h4>
+                      <p className="font-serif text-sm leading-relaxed text-[var(--color-text-ink)] italic relative z-10">
+                        {historyItem.segment.hiddenNotes?.predicted_ideal_outcome ||
+                          "A calculated shift in narrative direction, diverging from reality."}
+                      </p>
+
+                      <div className="w-full h-px border-t border-dashed border-[var(--color-accent-red)] opacity-30 my-4 relative z-10"></div>
+                      
                       <h4 className="text-[10px] font-sans font-bold uppercase tracking-widest mb-2 text-[var(--color-accent-red)] relative z-10">
                         Author's Strategy
                       </h4>
-                      <p className="font-serif text-sm leading-relaxed text-[var(--color-text-ink)] italic relative z-10">
+                      <p className="font-serif text-xs leading-relaxed text-[var(--color-text-ink)] italic relative z-10">
                         {historyItem.segment.hiddenNotes?.strategy ||
                           "No specific strategy listed."}
                       </p>

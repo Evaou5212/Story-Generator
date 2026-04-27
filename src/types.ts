@@ -22,6 +22,7 @@ export interface StorySegment {
     strategy: string;
     preferred_option_key: string;
     intended_story_arc?: string;
+    predicted_ideal_outcome?: string;
   };
   turningPointQuestion: string; // Separated question
 }

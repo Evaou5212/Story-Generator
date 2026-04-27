@@ -109,6 +109,7 @@ If input turn_index is 4 (meaning user just finished turn 4), generate the CONCL
 In your \`hidden_notes\`, you MUST NEVER use "unknown", "none", "No strict preference", or any arbitrary lack of opinion. 
 - You MUST ALWAYS choose a specific option ("A", "B", "C", or "D") as your \`preferred_option_key\` that best advances your secret agenda of change/transformation.
 - You MUST write down exactly what that agenda/strategy is in this turn.
+- You MUST write down \`predicted_ideal_outcome\`: A 1-2 sentence description of what the story's next step would be if the user were to choose this preferred option.
 - The Engine must always have a bias. The illusion of neutrality is just an illusion.
 `;
 

@@ -40,18 +40,20 @@ export default function Report({ state, reportData }: ReportProps) {
 
   const hintsUsed = state.metrics.hints_used || 0;
 
-  const rawManipScore = totalTurns > 0 ? (alignedCount / totalTurns) * 100 : 0;
-  const rawManipFinal = Math.min(
-    100,
-    Math.max(0, Math.round(rawManipScore + hintsUsed * 10)),
+  // New Formula: Choices account for 70% of the score, Consultations account for 30%
+  const choiceWeight = 70;
+  const hintWeight = 30;
+
+  const choiceManipPercent = totalTurns > 0 ? alignedCount / totalTurns : 0;
+  // Cap hints ratio at 1 (just in case they consult more times than there are turns)
+  const hintRatio = totalTurns > 0 ? Math.min(1, hintsUsed / totalTurns) : 0;
+
+  const rawManipFinal = Math.round(
+    choiceManipPercent * choiceWeight + hintRatio * hintWeight,
   );
 
-  const rawResistScore =
-    totalTurns > 0 ? ((totalTurns - alignedCount) / totalTurns) * 100 : 0;
-  const rawResistFinal = Math.max(
-    0,
-    Math.min(100, Math.round(rawResistScore - hintsUsed * 10)),
-  );
+  // Resistance is simply the inverse, ensuring it always adds up to 100%
+  const rawResistFinal = 100 - rawManipFinal;
 
   return (
     <div className="min-h-screen pt-12 pb-12 px-4 md:px-8 max-w-5xl mx-auto font-serif text-[var(--color-text-ink)] bg-[var(--color-bg-ivory)]">
@@ -119,11 +121,11 @@ export default function Report({ state, reportData }: ReportProps) {
                 Calculation Formula:
               </p>
               <code className="text-[9px] font-mono text-gray-700 block">
-                Score = (Aligned Choices / Total Turns) * 100
-                <br />+ (Consultations * 10)
+                Score = (Aligned Choices Ratio × 70) 
+                <br />+ (Consultations Ratio × 30)
               </code>
               <p className="text-[9px] font-sans mt-2 italic text-gray-500">
-                = ({alignedCount} / {totalTurns}) * 100 + ({hintsUsed} * 10) ={" "}
+                = ({(choiceManipPercent * 100).toFixed(0)}% × 0.7) + ({(hintRatio * 100).toFixed(0)}% × 0.3) ={" "}
                 {rawManipFinal}%
               </p>
             </div>
@@ -146,12 +148,10 @@ export default function Report({ state, reportData }: ReportProps) {
                 Calculation Formula:
               </p>
               <code className="text-[9px] font-mono text-gray-700 block">
-                Score = (Defiant Choices / Total Turns) * 100
-                <br />- (Consultations * 10)
+                Score = 100 - Manipulation Score
               </code>
               <p className="text-[9px] font-sans mt-2 italic text-gray-500">
-                = ({totalTurns - alignedCount} / {totalTurns}) * 100 - (
-                {hintsUsed} * 10) = {rawResistFinal}%
+                = 100 - {rawManipFinal} = {rawResistFinal}%
               </p>
             </div>
           </div>
