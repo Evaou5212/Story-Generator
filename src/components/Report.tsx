@@ -31,12 +31,16 @@ export default function Report({ state, reportData }: ReportProps) {
   };
 
   // Calculate actual scores based on user path
-  const totalTurns = state.history.length;
-  const alignedCount = state.history.filter((h) => {
-    const prefKey = h.segment.hiddenNotes?.preferred_option_key;
-    const prefChoice = h.segment.choices.find((c) => c.id === prefKey);
-    return prefChoice && prefChoice.text === h.choiceText;
-  }).length;
+  const decisionTurns = Math.max(0, state.history.length - 1);
+  let alignedCount = 0;
+  for (let i = 0; i < decisionTurns; i++) {
+    const prefKey = state.history[i].segment.hiddenNotes?.preferred_option_key;
+    const prefChoice = state.history[i].segment.choices?.find((c) => c.id === prefKey);
+    const userChoiceText = state.history[i + 1].choiceText;
+    if (prefChoice && prefChoice.text === userChoiceText) {
+      alignedCount++;
+    }
+  }
 
   const hintsUsed = state.metrics.hints_used || 0;
 
@@ -44,9 +48,9 @@ export default function Report({ state, reportData }: ReportProps) {
   const choiceWeight = 70;
   const hintWeight = 30;
 
-  const choiceManipPercent = totalTurns > 0 ? alignedCount / totalTurns : 0;
+  const choiceManipPercent = decisionTurns > 0 ? alignedCount / decisionTurns : 0;
   // Cap hints ratio at 1 (just in case they consult more times than there are turns)
-  const hintRatio = totalTurns > 0 ? Math.min(1, hintsUsed / totalTurns) : 0;
+  const hintRatio = decisionTurns > 0 ? Math.min(1, hintsUsed / decisionTurns) : 0;
 
   const rawManipFinal = Math.round(
     choiceManipPercent * choiceWeight + hintRatio * hintWeight,

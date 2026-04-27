@@ -21,7 +21,9 @@ export default function ReportMindMap({ state }: ReportMindMapProps) {
         {/* Center Line */}
         <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-[var(--color-border-vintage)] -translate-x-1/2 z-0"></div>
 
-        {state.history.map((historyItem, index) => {
+        {state.history.slice(0, -1).map((historyItem, index) => {
+          const nextHistoryItem = state.history[index + 1];
+
           if (
             !historyItem.segment.choices ||
             historyItem.segment.choices.length === 0
@@ -35,9 +37,9 @@ export default function ReportMindMap({ state }: ReportMindMapProps) {
             null;
 
           const isAlignment =
-            preferredChoice && preferredChoice.text === historyItem.choiceText;
+            preferredChoice && preferredChoice.text === nextHistoryItem.choiceText;
 
-          const nextSegment = state.history[index + 1]?.segment;
+          const nextSegment = nextHistoryItem.segment;
           const userOutcome = nextSegment
             ? nextSegment.text
             : "The story concluded based on this choice.";
@@ -123,7 +125,7 @@ export default function ReportMindMap({ state }: ReportMindMapProps) {
                     <p
                       className="font-serif text-base text-[var(--color-text-ink)] mb-0"
                     >
-                      {historyItem.choiceText}
+                      {nextHistoryItem.choiceText}
                     </p>
                   </div>
 
